@@ -7,10 +7,12 @@ namespace CozyLedger.Api.Tests;
 public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
 {
     private readonly string _connectionString;
+    private readonly string _storageRoot;
 
-    public TestWebApplicationFactory(string connectionString)
+    public TestWebApplicationFactory(string connectionString, string? storageRoot = null)
     {
         _connectionString = connectionString;
+        _storageRoot = storageRoot ?? Path.Combine(Path.GetTempPath(), "cozyledger-tests", Guid.NewGuid().ToString("N"));
     }
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
@@ -24,7 +26,8 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
                 ["Jwt:Issuer"] = "CozyLedger.Test",
                 ["Jwt:Audience"] = "CozyLedger.Test",
                 ["Jwt:Key"] = "test-key-for-cozyledger-32bytes",
-                ["Jwt:ExpiryMinutes"] = "30"
+                ["Jwt:ExpiryMinutes"] = "30",
+                ["AttachmentStorage:RootPath"] = _storageRoot
             };
 
             config.AddInMemoryCollection(overrides);

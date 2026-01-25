@@ -12,7 +12,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection(JwtOptions.SectionName));
+builder.Services.Configure<AttachmentStorageOptions>(builder.Configuration.GetSection(AttachmentStorageOptions.SectionName));
 builder.Services.AddSingleton<JwtTokenService>();
+builder.Services.AddSingleton<AttachmentStorage>();
 
 builder.Services.AddIdentityCore<ApplicationUser>(options =>
     {
@@ -65,6 +67,7 @@ app.MapInviteEndpoints();
 app.MapAccountEndpoints();
 app.MapCategoryEndpoints();
 app.MapTransactionEndpoints();
+app.MapAttachmentEndpoints();
 
 app.Run();
 
