@@ -3,3 +3,17 @@
 
 # Source assets
 /doc/_sources/
+
+# .NET
+/backend/**/bin/
+/backend/**/obj/
+/backend/.vs/
+
+# Node
+/frontend/node_modules/
+/frontend/dist/
+/frontend/.vite/
+
+# Misc
+.DS_Store
+*.log

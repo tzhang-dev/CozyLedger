@@ -1,0 +1,6 @@
+@CozyLedger.Api_HostAddress = http://localhost:5245
+
+GET {{CozyLedger.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
