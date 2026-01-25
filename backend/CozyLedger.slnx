@@ -1,6 +1,8 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/CozyLedger.Api/CozyLedger.Api.csproj" />
+    <Project Path="src/CozyLedger.Domain/CozyLedger.Domain.csproj" />
+    <Project Path="src/CozyLedger.Infrastructure/CozyLedger.Infrastructure.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/CozyLedger.Api.Tests/CozyLedger.Api.Tests.csproj" />
