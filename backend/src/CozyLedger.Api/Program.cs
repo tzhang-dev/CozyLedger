@@ -62,6 +62,9 @@ app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
 app.MapAuthEndpoints();
 app.MapBookEndpoints();
 app.MapInviteEndpoints();
+app.MapAccountEndpoints();
+app.MapCategoryEndpoints();
+app.MapTransactionEndpoints();
 
 app.Run();
 
