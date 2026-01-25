@@ -13,6 +13,7 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid
     }
 
     public DbSet<Book> Books => Set<Book>();
+    public DbSet<BookInvite> BookInvites => Set<BookInvite>();
     public DbSet<Membership> Memberships => Set<Membership>();
     public DbSet<Account> Accounts => Set<Account>();
     public DbSet<Category> Categories => Set<Category>();
@@ -30,6 +31,16 @@ public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid
         {
             entity.Property(e => e.Name).HasMaxLength(200).IsRequired();
             entity.Property(e => e.BaseCurrency).HasMaxLength(3).IsRequired();
+        });
+
+        builder.Entity<BookInvite>(entity =>
+        {
+            entity.Property(e => e.Token).HasMaxLength(200).IsRequired();
+            entity.HasIndex(e => e.Token).IsUnique();
+            entity.HasOne(e => e.Book)
+                .WithMany()
+                .HasForeignKey(e => e.BookId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         builder.Entity<Membership>(entity =>
