@@ -27,6 +27,12 @@ These rules are mandatory for any coding agent working in this repository.
 2. If no direct test exists for the change, run the closest related test suite and add/update tests when appropriate.
 3. Report test results in the task summary, including any failures and the chosen remediation path.
 
+## Documentation Rule (Docstring Coverage Required)
+
+1. All new or modified code must include good docstrings for public classes, methods, functions, and modules.
+2. Docstrings must clearly describe purpose, inputs, outputs, side effects, and important constraints.
+3. Avoid placeholder docstrings; keep documentation accurate and updated with behavior changes.
+
 ## Stop Condition
 
 1. Do not stop early.

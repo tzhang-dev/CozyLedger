@@ -12,6 +12,21 @@
   padding: 1.25rem;
 }
 
+.setup-main {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background:
+    radial-gradient(circle at 20% 0%, rgba(247, 193, 124, 0.25), transparent 40%),
+    radial-gradient(circle at 80% 10%, rgba(111, 201, 180, 0.2), transparent 35%),
+    linear-gradient(180deg, #f9f7ef 0%, #f1ecdf 100%);
+}
+
+.setup-card {
+  width: min(620px, 100%);
+}
+
 .app-header {
   grid-column: 1 / -1;
   display: flex;
@@ -74,6 +89,23 @@
   gap: 0.7rem;
 }
 
+.split-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.tile-grid {
+  display: grid;
+  gap: 0.8rem;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.form-grid {
+  display: grid;
+  gap: 0.7rem;
+}
+
 .page-hint {
   color: var(--text-secondary);
 }
@@ -126,5 +158,13 @@
 
   .app-main {
     min-height: calc(100vh - 180px);
+  }
+
+  .split-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .tile-grid {
+    grid-template-columns: 1fr;
   }
 }
