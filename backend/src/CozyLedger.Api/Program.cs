@@ -68,6 +68,7 @@ app.MapAccountEndpoints();
 app.MapCategoryEndpoints();
 app.MapTransactionEndpoints();
 app.MapAttachmentEndpoints();
+app.MapReportEndpoints();
 
 app.Run();
 
