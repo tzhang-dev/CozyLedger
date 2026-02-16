@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, Card, Checkbox, Group, Select, Stack, Text, TextInput, Title } from '@mantine/core'
+import { useTranslation } from 'react-i18next'
 import {
   createAccount,
   createCategory,
@@ -18,24 +19,11 @@ type Props = {
   bookId: string
 }
 
-const accountTypeOptions = [
-  { label: 'Cash', value: String(AccountType.Cash) },
-  { label: 'Bank', value: String(AccountType.Bank) },
-  { label: 'Credit Card', value: String(AccountType.CreditCard) },
-  { label: 'Investment', value: String(AccountType.Investment) },
-  { label: 'Liability', value: String(AccountType.Liability) },
-  { label: 'Other', value: String(AccountType.Other) }
-]
-
-const categoryTypeOptions = [
-  { label: 'Expense', value: String(CategoryType.Expense) },
-  { label: 'Income', value: String(CategoryType.Income) }
-]
-
 /**
  * Manages account and category CRUD for the active book.
  */
 export function AccountsPage({ token, bookId }: Props) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [accountName, setAccountName] = useState('')
   const [accountCurrency, setAccountCurrency] = useState('USD')
@@ -44,6 +32,20 @@ export function AccountsPage({ token, bookId }: Props) {
   const [categoryName, setCategoryName] = useState('')
   const [categoryType, setCategoryType] = useState(String(CategoryType.Expense))
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
+
+  const accountTypeOptions = [
+    { label: t('typeCash'), value: String(AccountType.Cash) },
+    { label: t('typeBank'), value: String(AccountType.Bank) },
+    { label: t('typeCreditCard'), value: String(AccountType.CreditCard) },
+    { label: t('typeInvestment'), value: String(AccountType.Investment) },
+    { label: t('typeLiability'), value: String(AccountType.Liability) },
+    { label: t('typeOther'), value: String(AccountType.Other) }
+  ]
+
+  const categoryTypeOptions = [
+    { label: t('typeExpense'), value: String(CategoryType.Expense) },
+    { label: t('typeIncome'), value: String(CategoryType.Income) }
+  ]
 
   const accountsQuery = useQuery({
     queryKey: ['accounts', bookId],
@@ -145,27 +147,27 @@ export function AccountsPage({ token, bookId }: Props) {
   }
 
   const getCategoryTypeLabel = (value: CategoryType) =>
-    value === CategoryType.Income ? 'Income' : 'Expense'
+    value === CategoryType.Income ? t('typeIncome') : t('typeExpense')
 
   return (
     <section className="page-panel">
-      <Title order={2}>Accounts & Categories</Title>
+      <Title order={2}>{t('accountsTitle')}</Title>
 
       <div className="split-grid">
         <Card shadow="sm" radius="md">
           <form onSubmit={handleAccountSubmit} className="form-grid">
-            <Text fw={600}>{selectedAccount ? 'Edit account' : 'Create account'}</Text>
-            <TextInput value={accountName} onChange={(e) => setAccountName(e.currentTarget.value)} label="Name" required />
+            <Text fw={600}>{selectedAccount ? t('editAccount') : t('createAccount')}</Text>
+            <TextInput value={accountName} onChange={(e) => setAccountName(e.currentTarget.value)} label={t('nameLabel')} required />
             <TextInput
               value={accountCurrency}
               onChange={(e) => setAccountCurrency(e.currentTarget.value.toUpperCase())}
-              label="Currency"
+              label={t('currencyLabel')}
               maxLength={3}
               required
             />
-            <Select value={accountType} onChange={(value) => setAccountType(value ?? String(AccountType.Cash))} data={accountTypeOptions} label="Type" />
+            <Select value={accountType} onChange={(value) => setAccountType(value ?? String(AccountType.Cash))} data={accountTypeOptions} label={t('typeLabel')} />
             <Button type="submit" loading={upsertAccount.isPending}>
-              {selectedAccount ? 'Save account' : 'Add account'}
+              {selectedAccount ? t('saveAccount') : t('addAccount')}
             </Button>
           </form>
           <Stack gap="xs" mt="md">
@@ -175,7 +177,7 @@ export function AccountsPage({ token, bookId }: Props) {
                   {account.nameEn} ({account.currency})
                 </Text>
                 <Button variant="light" size="xs" onClick={() => startAccountEdit(account)}>
-                  Edit
+                  {t('editButton')}
                 </Button>
               </Group>
             ))}
@@ -184,17 +186,17 @@ export function AccountsPage({ token, bookId }: Props) {
 
         <Card shadow="sm" radius="md">
           <form onSubmit={handleCategorySubmit} className="form-grid">
-            <Text fw={600}>{selectedCategory ? 'Edit category' : 'Create category'}</Text>
-            <TextInput value={categoryName} onChange={(e) => setCategoryName(e.currentTarget.value)} label="Name" required />
+            <Text fw={600}>{selectedCategory ? t('editCategory') : t('createCategory')}</Text>
+            <TextInput value={categoryName} onChange={(e) => setCategoryName(e.currentTarget.value)} label={t('nameLabel')} required />
             <Select
               value={categoryType}
               onChange={(value) => setCategoryType(value ?? String(CategoryType.Expense))}
               data={categoryTypeOptions}
-              label="Type"
+              label={t('typeLabel')}
             />
-            <Checkbox label="Active" checked readOnly />
+            <Checkbox label={t('activeLabel')} checked readOnly />
             <Button type="submit" loading={upsertCategory.isPending}>
-              {selectedCategory ? 'Save category' : 'Add category'}
+              {selectedCategory ? t('saveCategory') : t('addCategory')}
             </Button>
           </form>
           <Stack gap="xs" mt="md">
@@ -204,7 +206,7 @@ export function AccountsPage({ token, bookId }: Props) {
                   {category.nameEn} ({getCategoryTypeLabel(category.type)})
                 </Text>
                 <Button variant="light" size="xs" onClick={() => startCategoryEdit(category)}>
-                  Edit
+                  {t('editButton')}
                 </Button>
               </Group>
             ))}

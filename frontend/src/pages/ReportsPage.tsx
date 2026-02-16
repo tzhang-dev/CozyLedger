@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Card, Group, NumberInput, Select, Stack, Text, Title } from '@mantine/core'
+import { useTranslation } from 'react-i18next'
 import {
   Bar,
   BarChart,
@@ -22,21 +23,22 @@ type Props = {
   bookId: string
 }
 
-const typeOptions = [
-  { label: 'Expense', value: String(CategoryType.Expense) },
-  { label: 'Income', value: String(CategoryType.Income) }
-]
-
 const categoryColors = ['#D16F2F', '#65A38D', '#50709A', '#CC8B65', '#7B6EA3', '#5A8B4B']
 
 /**
  * Renders chart-based monthly summary and category distribution for the active book.
  */
 export function ReportsPage({ token, bookId }: Props) {
+  const { t } = useTranslation()
   const now = new Date()
   const [year, setYear] = useState(now.getUTCFullYear())
   const [month, setMonth] = useState(now.getUTCMonth() + 1)
   const [distributionType, setDistributionType] = useState(String(CategoryType.Expense))
+
+  const typeOptions = [
+    { label: t('typeExpense'), value: String(CategoryType.Expense) },
+    { label: t('typeIncome'), value: String(CategoryType.Income) }
+  ]
 
   const summaryQuery = useQuery({
     queryKey: ['reports-summary', bookId, year, month],
@@ -54,11 +56,11 @@ export function ReportsPage({ token, bookId }: Props) {
     }
 
     return [
-      { name: 'Income', value: summaryQuery.data.incomeTotal },
-      { name: 'Expense', value: summaryQuery.data.expenseTotal },
-      { name: 'Net', value: summaryQuery.data.netTotal }
+      { name: t('summaryIncome'), value: summaryQuery.data.incomeTotal },
+      { name: t('summaryExpense'), value: summaryQuery.data.expenseTotal },
+      { name: t('summaryNet'), value: summaryQuery.data.netTotal }
     ]
-  }, [summaryQuery.data])
+  }, [summaryQuery.data, t])
 
   const categoryChartData = useMemo(() => {
     const items = distributionQuery.data?.items ?? []
@@ -76,12 +78,12 @@ export function ReportsPage({ token, bookId }: Props) {
 
   return (
     <section className="page-panel">
-      <Title order={2}>Reports</Title>
+      <Title order={2}>{t('reportsTitle')}</Title>
       <Group>
-        <NumberInput label="Year" value={year} onChange={(value) => setYear(Number(value || now.getUTCFullYear()))} />
-        <NumberInput label="Month" value={month} min={1} max={12} onChange={(value) => setMonth(Number(value || 1))} />
+        <NumberInput label={t('yearLabel')} value={year} onChange={(value) => setYear(Number(value || now.getUTCFullYear()))} />
+        <NumberInput label={t('monthLabel')} value={month} min={1} max={12} onChange={(value) => setMonth(Number(value || 1))} />
         <Select
-          label="Category view"
+          label={t('categoryViewLabel')}
           data={typeOptions}
           value={distributionType}
           onChange={(value) => setDistributionType(value ?? String(CategoryType.Expense))}
@@ -89,9 +91,9 @@ export function ReportsPage({ token, bookId }: Props) {
       </Group>
 
       <Card shadow="sm" radius="md">
-        <Text fw={600}>Summary ({baseCurrency})</Text>
+        <Text fw={600}>{t('summaryTitle')} ({baseCurrency})</Text>
         <Text c="dimmed" size="sm">
-          Totals are shown in the book base currency.
+          {t('summaryCurrencyHint')}
         </Text>
         <div className="chart-box">
           <ResponsiveContainer width="100%" height="100%">
@@ -101,7 +103,7 @@ export function ReportsPage({ token, bookId }: Props) {
               <YAxis />
               <Tooltip formatter={formatCurrencyValue} />
               <Legend />
-              <Bar dataKey="value" name={`Amount (${baseCurrency})`}>
+              <Bar dataKey="value" name={`${t('amountWithCurrency')} (${baseCurrency})`}>
                 {summaryChartData.map((entry, index) => (
                   <Cell key={`${entry.name}-${index}`} fill={categoryColors[index % categoryColors.length]} />
                 ))}
@@ -112,9 +114,9 @@ export function ReportsPage({ token, bookId }: Props) {
       </Card>
 
       <Card shadow="sm" radius="md">
-        <Text fw={600}>Category Distribution ({baseCurrency})</Text>
+        <Text fw={600}>{t('categoryDistributionTitle')} ({baseCurrency})</Text>
         <Text c="dimmed" size="sm">
-          Each slice/bar value is expressed in base currency.
+          {t('categoryDistributionHint')}
         </Text>
         <div className="split-grid report-charts">
           <div className="chart-box">
@@ -137,7 +139,7 @@ export function ReportsPage({ token, bookId }: Props) {
                 <XAxis type="number" />
                 <YAxis dataKey="name" type="category" width={120} />
                 <Tooltip formatter={formatCurrencyValue} />
-                <Bar dataKey="value" name={`Amount (${baseCurrency})`} fill="#65A38D" />
+                <Bar dataKey="value" name={`${t('amountWithCurrency')} (${baseCurrency})`} fill="#65A38D" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -145,7 +147,7 @@ export function ReportsPage({ token, bookId }: Props) {
 
         {!categoryChartData.length && (
           <Stack gap="xs" mt="sm">
-            <Text c="dimmed">No category data for selected month.</Text>
+            <Text c="dimmed">{t('noCategoryData')}</Text>
           </Stack>
         )}
       </Card>

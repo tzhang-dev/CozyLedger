@@ -81,6 +81,7 @@ function Navigation({ items }: { items: NavItem[] }) {
 }
 
 function SetupPanel({ onReady }: { onReady: (session: SessionState) => void }) {
+  const { t } = useTranslation()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [bookName, setBookName] = useState('Household')
@@ -124,35 +125,35 @@ function SetupPanel({ onReady }: { onReady: (session: SessionState) => void }) {
     <main className="setup-main">
       <Card shadow="sm" radius="md" className="setup-card">
         <Text fw={700} size="lg">
-          Get Started
+          {t('setupTitle')}
         </Text>
         <Text c="dimmed" size="sm">
-          Register or login first, then create your first book.
+          {t('setupHint')}
         </Text>
         <form onSubmit={handleRegister} className="form-grid">
-          <TextInput label="Email" value={email} onChange={(event) => setEmail(event.currentTarget.value)} required />
-          <PasswordInput label="Password" value={password} onChange={(event) => setPassword(event.currentTarget.value)} required />
+          <TextInput label={t('emailLabel')} value={email} onChange={(event) => setEmail(event.currentTarget.value)} required />
+          <PasswordInput label={t('passwordLabel')} value={password} onChange={(event) => setPassword(event.currentTarget.value)} required />
           <Group>
             <Button type="submit" loading={registerMutation.isPending}>
-              Register
+              {t('registerButton')}
             </Button>
             <Button type="button" variant="light" onClick={() => loginMutation.mutate()} loading={loginMutation.isPending}>
-              Login
+              {t('loginButton')}
             </Button>
           </Group>
         </form>
         <form onSubmit={handleCreateBook} className="form-grid">
-          <TextInput label="Book name" value={bookName} onChange={(event) => setBookName(event.currentTarget.value)} required />
+          <TextInput label={t('bookNameLabel')} value={bookName} onChange={(event) => setBookName(event.currentTarget.value)} required />
           <TextInput
-            label="Base currency"
+            label={t('baseCurrencyLabel')}
             value={baseCurrency}
             onChange={(event) => setBaseCurrency(event.currentTarget.value.toUpperCase())}
             maxLength={3}
             required
           />
-          <TextInput label="Token" value={token} onChange={(event) => setToken(event.currentTarget.value)} required />
+          <TextInput label={t('tokenLabel')} value={token} onChange={(event) => setToken(event.currentTarget.value)} required />
           <Button type="submit" loading={createBookMutation.isPending}>
-            Create book
+            {t('createBookButton')}
           </Button>
         </form>
       </Card>
@@ -195,7 +196,7 @@ function App() {
               setSession(null)
             }}
           >
-            Sign out
+            {t('signOut')}
           </Button>
         </Group>
       </header>

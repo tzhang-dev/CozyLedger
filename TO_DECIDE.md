@@ -5,3 +5,7 @@
 - Decision: If direct rate is missing, fallback to inverse rate (`baseCurrency -> txnCurrency`) on or before the transaction date and convert by division.
 - Decision: If neither direct nor inverse rate exists, the report endpoint returns `422 Unprocessable Entity` with a `missingRates` list instead of silently skipping transactions.
 - Rationale: This keeps totals deterministic, preserves data quality, and exposes missing exchange-rate data clearly for remediation.
+
+## 2026-02-16 - Frontend bundle size warning handling for MVP
+- Decision: Keep the current single-chunk frontend build for MVP even though Vite warns about a large JS bundle (>500KB).
+- Rationale: Functional completeness and flow stability were prioritized for MVP milestones 8-10; route-level code splitting can be added as a post-MVP optimization without changing API behavior.

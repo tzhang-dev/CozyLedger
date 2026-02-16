@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Card, Group, Loader, Text, Title } from '@mantine/core'
+import { useTranslation } from 'react-i18next'
 import { getCategoryDistribution, getMonthlySummary } from '../lib/cozyApi'
 import { CategoryType } from '../lib/types'
 
@@ -13,6 +14,7 @@ type Props = {
  * Shows a monthly snapshot and top expense categories for the active book.
  */
 export function DashboardPage({ token, bookId }: Props) {
+  const { t } = useTranslation()
   const now = useMemo(() => new Date(), [])
   const year = now.getUTCFullYear()
   const month = now.getUTCMonth() + 1
@@ -29,30 +31,24 @@ export function DashboardPage({ token, bookId }: Props) {
 
   return (
     <section className="page-panel">
-      <Title order={2}>Household Snapshot</Title>
+      <Title order={2}>{t('dashboardTitle')}</Title>
       {(summaryQuery.isLoading || distributionQuery.isLoading) && <Loader size="sm" />}
       {summaryQuery.data && (
         <Group className="tile-grid" grow>
           <Card shadow="sm" radius="md" className="status-card">
-            <Text size="sm" c="dimmed">
-              Income
-            </Text>
+            <Text size="sm" c="dimmed">{t('summaryIncome')}</Text>
             <Text fw={700} size="xl">
               {summaryQuery.data.baseCurrency} {summaryQuery.data.incomeTotal.toFixed(2)}
             </Text>
           </Card>
           <Card shadow="sm" radius="md" className="status-card">
-            <Text size="sm" c="dimmed">
-              Expense
-            </Text>
+            <Text size="sm" c="dimmed">{t('summaryExpense')}</Text>
             <Text fw={700} size="xl">
               {summaryQuery.data.baseCurrency} {summaryQuery.data.expenseTotal.toFixed(2)}
             </Text>
           </Card>
           <Card shadow="sm" radius="md" className="status-card">
-            <Text size="sm" c="dimmed">
-              Net
-            </Text>
+            <Text size="sm" c="dimmed">{t('summaryNet')}</Text>
             <Text fw={700} size="xl">
               {summaryQuery.data.baseCurrency} {summaryQuery.data.netTotal.toFixed(2)}
             </Text>
@@ -61,7 +57,7 @@ export function DashboardPage({ token, bookId }: Props) {
       )}
 
       <Card shadow="sm" radius="md">
-        <Text fw={600}>Top Expense Categories (This Month)</Text>
+        <Text fw={600}>{t('topExpenseCategoriesMonth')}</Text>
         {distributionQuery.data?.items.length ? (
           distributionQuery.data.items.slice(0, 5).map((item) => (
             <Group key={item.categoryId} justify="space-between">
@@ -72,7 +68,7 @@ export function DashboardPage({ token, bookId }: Props) {
             </Group>
           ))
         ) : (
-          <Text c="dimmed">No data yet.</Text>
+          <Text c="dimmed">{t('noDataYet')}</Text>
         )}
       </Card>
     </section>

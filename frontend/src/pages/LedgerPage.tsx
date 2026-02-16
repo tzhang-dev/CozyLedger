@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, Card, Group, NumberInput, Select, Stack, Switch, Text, TextInput, Title } from '@mantine/core'
+import { useTranslation } from 'react-i18next'
 import { createTransaction, listAccounts, listCategories, listTransactions, updateTransaction } from '../lib/cozyApi'
 import { TransactionType } from '../lib/types'
 import type { TransactionResponse } from '../lib/types'
@@ -11,17 +12,11 @@ type Props = {
   bookId: string
 }
 
-const transactionTypeOptions = [
-  { label: 'Expense', value: String(TransactionType.Expense) },
-  { label: 'Income', value: String(TransactionType.Income) },
-  { label: 'Transfer', value: String(TransactionType.Transfer) },
-  { label: 'Balance Adjustment', value: String(TransactionType.BalanceAdjustment) }
-]
-
 /**
  * Manages transaction create/update flows and renders the ledger list.
  */
 export function LedgerPage({ token, bookId }: Props) {
+  const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
   const [type, setType] = useState(String(TransactionType.Expense))
@@ -33,6 +28,13 @@ export function LedgerPage({ token, bookId }: Props) {
   const [categoryId, setCategoryId] = useState<string | null>(null)
   const [note, setNote] = useState('')
   const [isRefund, setIsRefund] = useState(false)
+
+  const transactionTypeOptions = [
+    { label: t('typeExpense'), value: String(TransactionType.Expense) },
+    { label: t('typeIncome'), value: String(TransactionType.Income) },
+    { label: t('typeTransfer'), value: String(TransactionType.Transfer) },
+    { label: t('typeBalanceAdjustment'), value: String(TransactionType.BalanceAdjustment) }
+  ]
 
   const accountsQuery = useQuery({
     queryKey: ['accounts', bookId],
@@ -131,15 +133,15 @@ export function LedgerPage({ token, bookId }: Props) {
   const getTransactionTypeLabel = (value: TransactionType) => {
     switch (value) {
       case TransactionType.Expense:
-        return 'Expense'
+        return t('typeExpense')
       case TransactionType.Income:
-        return 'Income'
+        return t('typeIncome')
       case TransactionType.Transfer:
-        return 'Transfer'
+        return t('typeTransfer')
       case TransactionType.BalanceAdjustment:
-        return 'Balance Adjustment'
+        return t('typeBalanceAdjustment')
       case TransactionType.LiabilityAdjustment:
-        return 'Liability Adjustment'
+        return t('typeLiabilityAdjustment')
       default:
         return 'Unknown'
     }
@@ -147,18 +149,18 @@ export function LedgerPage({ token, bookId }: Props) {
 
   return (
     <section className="page-panel">
-      <Title order={2}>Ledger</Title>
+      <Title order={2}>{t('ledgerTitle')}</Title>
       <div className="split-grid">
         <Card shadow="sm" radius="md">
           <form onSubmit={handleSubmit} className="form-grid">
-            <Text fw={600}>{selectedTransaction ? 'Edit transaction' : 'Create transaction'}</Text>
-            <Select label="Type" data={transactionTypeOptions} value={type} onChange={(value) => setType(value ?? String(TransactionType.Expense))} />
-            <TextInput label="Date (UTC)" value={dateUtc} onChange={(event) => setDateUtc(event.currentTarget.value)} required />
-            <NumberInput label="Amount" value={amount} onChange={(value) => setAmount(Number(value ?? 0))} required />
-            <TextInput label="Currency" value={currency} onChange={(event) => setCurrency(event.currentTarget.value.toUpperCase())} maxLength={3} required />
-            <Select label="Account" data={accountOptions} value={accountId} onChange={setAccountId} searchable required />
+            <Text fw={600}>{selectedTransaction ? t('editTransaction') : t('createTransaction')}</Text>
+            <Select label={t('typeLabel')} data={transactionTypeOptions} value={type} onChange={(value) => setType(value ?? String(TransactionType.Expense))} />
+            <TextInput label={t('dateUtcLabel')} value={dateUtc} onChange={(event) => setDateUtc(event.currentTarget.value)} required />
+            <NumberInput label={t('amountLabel')} value={amount} onChange={(value) => setAmount(Number(value ?? 0))} required />
+            <TextInput label={t('currencyLabel')} value={currency} onChange={(event) => setCurrency(event.currentTarget.value.toUpperCase())} maxLength={3} required />
+            <Select label={t('accountLabel')} data={accountOptions} value={accountId} onChange={setAccountId} searchable required />
             <Select
-              label="Destination account"
+              label={t('destinationAccountLabel')}
               data={accountOptions}
               value={toAccountId}
               onChange={setToAccountId}
@@ -166,22 +168,22 @@ export function LedgerPage({ token, bookId }: Props) {
               clearable
             />
             <Select
-              label="Category"
+              label={t('categoryLabel')}
               data={categoryOptions}
               value={categoryId}
               onChange={setCategoryId}
               disabled={!needsCategory}
               clearable
             />
-            <TextInput label="Note" value={note} onChange={(event) => setNote(event.currentTarget.value)} />
-            <Switch label="Refund" checked={isRefund} onChange={(event) => setIsRefund(event.currentTarget.checked)} disabled={Number(type) !== TransactionType.Expense} />
+            <TextInput label={t('noteLabel')} value={note} onChange={(event) => setNote(event.currentTarget.value)} />
+            <Switch label={t('refundLabel')} checked={isRefund} onChange={(event) => setIsRefund(event.currentTarget.checked)} disabled={Number(type) !== TransactionType.Expense} />
             <Group>
               <Button type="submit" loading={upsertTransaction.isPending}>
-                {selectedTransaction ? 'Save transaction' : 'Add transaction'}
+                {selectedTransaction ? t('saveTransaction') : t('addTransaction')}
               </Button>
               {selectedTransaction && (
                 <Button variant="default" type="button" onClick={resetForm}>
-                  Cancel edit
+                  {t('cancelEdit')}
                 </Button>
               )}
             </Group>
@@ -189,7 +191,7 @@ export function LedgerPage({ token, bookId }: Props) {
         </Card>
 
         <Card shadow="sm" radius="md">
-          <Text fw={600}>Transactions</Text>
+          <Text fw={600}>{t('transactionsTitle')}</Text>
           <Stack gap="xs" mt="sm">
             {transactionsQuery.data?.map((item) => (
               <Group key={item.id} justify="space-between">
@@ -197,11 +199,11 @@ export function LedgerPage({ token, bookId }: Props) {
                   {item.dateUtc.slice(0, 10)} | {getTransactionTypeLabel(item.type)} | {item.currency} {item.amount}
                 </Text>
                 <Button size="xs" variant="light" onClick={() => startEdit(item)}>
-                  Edit
+                  {t('editButton')}
                 </Button>
               </Group>
             ))}
-            {!transactionsQuery.data?.length && <Text c="dimmed">No transactions yet.</Text>}
+            {!transactionsQuery.data?.length && <Text c="dimmed">{t('noTransactions')}</Text>}
           </Stack>
         </Card>
       </div>
