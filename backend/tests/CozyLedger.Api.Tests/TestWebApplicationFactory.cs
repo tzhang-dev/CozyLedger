@@ -1,6 +1,10 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using CozyLedger.Infrastructure.Data;
 
 namespace CozyLedger.Api.Tests;
 
@@ -23,14 +27,19 @@ public sealed class TestWebApplicationFactory : WebApplicationFactory<Program>
             var overrides = new Dictionary<string, string?>
             {
                 ["ConnectionStrings:Default"] = _connectionString,
-                ["Jwt:Issuer"] = "CozyLedger.Test",
-                ["Jwt:Audience"] = "CozyLedger.Test",
-                ["Jwt:Key"] = "test-key-for-cozyledger-32bytes",
+                ["Jwt:Issuer"] = "CozyLedger",
+                ["Jwt:Audience"] = "CozyLedger",
+                ["Jwt:Key"] = "dev-secret-key-change-this-is-32bytes",
                 ["Jwt:ExpiryMinutes"] = "30",
                 ["AttachmentStorage:RootPath"] = _storageRoot
             };
 
             config.AddInMemoryCollection(overrides);
+        });
+        builder.ConfigureServices(services =>
+        {
+            services.RemoveAll<DbContextOptions<AppDbContext>>();
+            services.AddDbContext<AppDbContext>(options => options.UseNpgsql(_connectionString));
         });
 
     }
