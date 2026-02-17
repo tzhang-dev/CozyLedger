@@ -1,20 +1,9 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { useViewportSize } from '@mantine/hooks'
+import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, Tooltip, XAxis, YAxis } from 'recharts'
 import { Card, Group, NumberInput, Select, Stack, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
-import {
-  Bar,
-  BarChart,
-  CartesianGrid,
-  Cell,
-  Legend,
-  Pie,
-  PieChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis
-} from 'recharts'
 import { getCategoryDistribution, getMonthlySummary } from '../lib/cozyApi'
 import { CategoryType } from '../lib/types'
 
@@ -30,6 +19,7 @@ const categoryColors = ['#D16F2F', '#65A38D', '#50709A', '#CC8B65', '#7B6EA3', '
  */
 export function ReportsPage({ token, bookId }: Props) {
   const { t } = useTranslation()
+  const { width: viewportWidth } = useViewportSize()
   const now = new Date()
   const [year, setYear] = useState(now.getUTCFullYear())
   const [month, setMonth] = useState(now.getUTCMonth() + 1)
@@ -76,6 +66,13 @@ export function ReportsPage({ token, bookId }: Props) {
     return `${baseCurrency} ${numericValue.toFixed(2)}`
   }
 
+  const summaryChartWidth = Math.max(320, Math.min(980, Math.floor(viewportWidth - 120)))
+  const splitChartWidth =
+    viewportWidth > 860
+      ? Math.max(280, Math.floor((viewportWidth - 190) / 2))
+      : Math.max(280, Math.floor(viewportWidth - 120))
+  const chartHeight = 320
+
   return (
     <section className="page-panel">
       <Title order={2}>{t('reportsTitle')}</Title>
@@ -96,20 +93,18 @@ export function ReportsPage({ token, bookId }: Props) {
           {t('summaryCurrencyHint')}
         </Text>
         <div className="chart-box">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={summaryChartData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip formatter={formatCurrencyValue} />
-              <Legend />
-              <Bar dataKey="value" name={`${t('amountWithCurrency')} (${baseCurrency})`}>
-                {summaryChartData.map((entry, index) => (
-                  <Cell key={`${entry.name}-${index}`} fill={categoryColors[index % categoryColors.length]} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+          <BarChart width={summaryChartWidth} height={chartHeight} data={summaryChartData}>
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip formatter={formatCurrencyValue} />
+            <Legend />
+            <Bar dataKey="value" name={`${t('amountWithCurrency')} (${baseCurrency})`}>
+              {summaryChartData.map((entry, index) => (
+                <Cell key={`${entry.name}-${index}`} fill={categoryColors[index % categoryColors.length]} />
+              ))}
+            </Bar>
+          </BarChart>
         </div>
       </Card>
 
@@ -120,28 +115,30 @@ export function ReportsPage({ token, bookId }: Props) {
         </Text>
         <div className="split-grid report-charts">
           <div className="chart-box">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie dataKey="value" data={categoryChartData} nameKey="name" outerRadius={100} label>
-                  {categoryChartData.map((entry, index) => (
-                    <Cell key={`${entry.name}-${index}`} fill={categoryColors[index % categoryColors.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={formatCurrencyValue} />
-              </PieChart>
-            </ResponsiveContainer>
+            <PieChart width={splitChartWidth} height={chartHeight}>
+              <Pie
+                dataKey="value"
+                data={categoryChartData}
+                nameKey="name"
+                outerRadius={Math.max(80, Math.min(splitChartWidth, chartHeight) * 0.3)}
+                label
+              >
+                {categoryChartData.map((entry, index) => (
+                  <Cell key={`${entry.name}-${index}`} fill={categoryColors[index % categoryColors.length]} />
+                ))}
+              </Pie>
+              <Tooltip formatter={formatCurrencyValue} />
+            </PieChart>
           </div>
 
           <div className="chart-box">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={categoryChartData} layout="vertical" margin={{ left: 16, right: 16 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={120} />
-                <Tooltip formatter={formatCurrencyValue} />
-                <Bar dataKey="value" name={`${t('amountWithCurrency')} (${baseCurrency})`} fill="#65A38D" />
-              </BarChart>
-            </ResponsiveContainer>
+            <BarChart width={splitChartWidth} height={chartHeight} data={categoryChartData} layout="vertical" margin={{ left: 16, right: 16 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" />
+              <YAxis dataKey="name" type="category" width={120} />
+              <Tooltip formatter={formatCurrencyValue} />
+              <Bar dataKey="value" name={`${t('amountWithCurrency')} (${baseCurrency})`} fill="#65A38D" />
+            </BarChart>
           </div>
         </div>
 
