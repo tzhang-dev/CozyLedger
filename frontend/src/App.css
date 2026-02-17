@@ -25,7 +25,7 @@
     linear-gradient(180deg, var(--cl-bg-1) 0%, var(--cl-bg-0) 100%);
   display: grid;
   grid-template-columns: 1fr;
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: 1fr auto;
   gap: 0.9rem;
   padding: 1rem;
 }
@@ -45,28 +45,10 @@
   width: min(620px, 100%);
 }
 
-.app-header {
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  background: linear-gradient(180deg, rgba(35, 43, 64, 0.92) 0%, rgba(27, 33, 50, 0.94) 100%);
-  border: 1px solid var(--cl-border-soft);
-  border-radius: var(--cl-radius-lg);
-  box-shadow: var(--cl-shadow-soft);
-  padding: 0.9rem 1.1rem;
-}
-
-.app-header h1 {
-  margin: 0;
-  font-size: clamp(1.25rem, 2vw, 1.7rem);
-  letter-spacing: 0.01em;
-}
-
 .app-main {
   border-radius: var(--cl-radius-lg);
   padding: 0.25rem;
-  min-height: calc(100vh - 184px);
+  min-height: calc(100vh - 108px);
 }
 
 .page-panel {
@@ -79,6 +61,20 @@
   justify-content: space-between;
   align-items: flex-end;
   gap: 0.75rem;
+}
+
+.titlebar-leading {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.action-menu-button {
+  border-radius: 999px;
+  background: rgba(47, 196, 219, 0.18);
+  border: 1px solid rgba(47, 196, 219, 0.38);
+  color: #9be8f5;
+  font-weight: 700;
 }
 
 .page-titlebar p {
@@ -151,6 +147,20 @@
   gap: 0.5rem;
 }
 
+.account-group {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.account-group-title {
+  color: var(--cl-text-secondary);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin-top: 0.2rem;
+}
+
 .list-row {
   display: flex;
   justify-content: space-between;
@@ -167,6 +177,29 @@
 .list-row-main {
   display: grid;
   gap: 0.14rem;
+}
+
+.list-row-main-grow {
+  flex: 1;
+  min-width: 0;
+}
+
+.account-row {
+  width: 100%;
+  cursor: pointer;
+  text-align: left;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.75rem;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  padding: 0.6rem 0.55rem;
+}
+
+.account-row-selected {
+  background: rgba(230, 162, 93, 0.16);
+  border-color: rgba(230, 162, 93, 0.38);
 }
 
 .list-row-title {
@@ -187,6 +220,12 @@
 .amount-negative {
   color: var(--cl-accent-red);
   font-weight: 600;
+}
+
+.account-row-balance {
+  margin-left: auto;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .bar-track {
@@ -340,18 +379,67 @@
   border: 1px solid var(--cl-border-soft);
 }
 
+.cl-action-modal-overlay {
+  background: rgba(5, 8, 14, 0.68);
+  backdrop-filter: blur(2px);
+}
+
+.cl-action-modal-content {
+  background: linear-gradient(180deg, rgba(33, 41, 62, 0.96) 0%, rgba(26, 33, 49, 0.98) 100%);
+  border: 1px solid var(--cl-border-soft);
+  box-shadow: var(--cl-shadow-soft);
+  color: var(--cl-text-primary);
+}
+
+.cl-action-modal-header {
+  background: transparent;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.cl-action-modal-title {
+  color: var(--cl-text-primary);
+  font-weight: 700;
+}
+
+.cl-action-modal-body {
+  color: var(--cl-text-primary);
+}
+
+.cl-action-modal-body .mantine-Input-input,
+.cl-action-modal-body .mantine-Select-input {
+  background: rgba(14, 18, 30, 0.8);
+  border: 1px solid var(--cl-border-soft);
+  color: var(--cl-text-primary);
+  border-radius: 12px;
+}
+
+.cl-action-modal-body .mantine-Input-label,
+.cl-action-modal-body .mantine-Select-label {
+  color: var(--cl-text-secondary);
+  font-size: 0.82rem;
+}
+
+.cl-action-modal-body .mantine-Button-root {
+  border-radius: 999px;
+  background: var(--cl-accent-orange);
+  color: #1a1309;
+  font-weight: 700;
+}
+
+.cl-action-modal-body .mantine-Button-root[data-variant='default'] {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--cl-text-primary);
+  border: 1px solid var(--cl-border-soft);
+}
+
 @media (max-width: 920px) {
   .app-shell {
     gap: 0.7rem;
     padding: 0.7rem;
   }
 
-  .app-header {
-    padding: 0.75rem 0.86rem;
-  }
-
   .app-main {
-    min-height: calc(100vh - 186px);
+    min-height: calc(100vh - 102px);
     padding: 0.1rem;
   }
 

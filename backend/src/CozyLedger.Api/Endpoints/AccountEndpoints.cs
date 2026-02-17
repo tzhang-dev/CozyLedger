@@ -24,6 +24,7 @@ public static class AccountEndpoints
         group.MapGet("/", ListAccountsAsync);
         group.MapPost("/", CreateAccountAsync);
         group.MapPut("/{accountId:guid}", UpdateAccountAsync);
+        group.MapDelete("/{accountId:guid}", DeleteAccountAsync);
 
         return app;
     }
@@ -175,6 +176,47 @@ public static class AccountEndpoints
             account.IsHidden,
             account.IncludeInNetWorth,
             account.Note));
+    }
+
+    /// <summary>
+    /// Deletes an existing account in a book when no transactions reference it.
+    /// </summary>
+    /// <param name="bookId">Book identifier.</param>
+    /// <param name="accountId">Account identifier.</param>
+    /// <param name="user">Authenticated user principal.</param>
+    /// <param name="dbContext">Database context.</param>
+    /// <returns>HTTP result representing deletion outcome.</returns>
+    private static async Task<IResult> DeleteAccountAsync(
+        Guid bookId,
+        Guid accountId,
+        ClaimsPrincipal user,
+        AppDbContext dbContext)
+    {
+        var userId = user.GetUserId();
+        if (!await IsMemberAsync(dbContext, bookId, userId))
+        {
+            return Results.Forbid();
+        }
+
+        var account = await dbContext.Accounts.FirstOrDefaultAsync(a => a.Id == accountId && a.BookId == bookId);
+        if (account is null)
+        {
+            return Results.NotFound();
+        }
+
+        var hasLinkedTransactions = await dbContext.Transactions.AnyAsync(t =>
+            t.BookId == bookId &&
+            (t.AccountId == accountId || t.ToAccountId == accountId));
+
+        if (hasLinkedTransactions)
+        {
+            return Results.BadRequest(new { error = "Cannot delete an account referenced by transactions." });
+        }
+
+        dbContext.Accounts.Remove(account);
+        await dbContext.SaveChangesAsync();
+
+        return Results.NoContent();
     }
 
     /// <summary>

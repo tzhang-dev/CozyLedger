@@ -1,18 +1,19 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
-import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
+import { NavLink, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
-import { ActionIcon, Button, Card, Group, PasswordInput, Text, TextInput } from '@mantine/core'
-import { IconLanguage } from '@tabler/icons-react'
+import { Alert, Button, Card, Group, PasswordInput, Text, TextInput } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
-import { createBook, listBooks, login, register } from './lib/cozyApi'
+import { ApiError, createBook, isNetworkError, listBooks, login, register } from './lib/cozyApi'
 import { clearSession, loadSession, saveSession } from './lib/session'
 import type { SessionState } from './lib/session'
 import { AccountsPage } from './pages/AccountsPage'
+import { CategoriesSettingsPage } from './pages/CategoriesSettingsPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { LedgerPage } from './pages/LedgerPage'
 import { MembersPage } from './pages/MembersPage'
 import { ReportsPage } from './pages/ReportsPage'
+import { SettingsPage } from './pages/SettingsPage'
 import './App.css'
 
 type NavItem = {
@@ -20,33 +21,6 @@ type NavItem = {
   label: string
   className?: string
   end?: boolean
-}
-
-function LanguageSwitch() {
-  const { i18n, t } = useTranslation()
-
-  return (
-    <Group gap="xs">
-      <IconLanguage size={18} />
-      <Text size="sm" fw={600}>
-        {t('languageLabel')}
-      </Text>
-      <ActionIcon
-        variant={i18n.language === 'en' ? 'filled' : 'light'}
-        onClick={() => void i18n.changeLanguage('en')}
-        aria-label="Switch to English"
-      >
-        EN
-      </ActionIcon>
-      <ActionIcon
-        variant={i18n.language === 'zh' ? 'filled' : 'light'}
-        onClick={() => void i18n.changeLanguage('zh')}
-        aria-label="切换到中文"
-      >
-        中
-      </ActionIcon>
-    </Group>
-  )
 }
 
 function Navigation({ items }: { items: NavItem[] }) {
@@ -81,6 +55,7 @@ function SetupPanel({ onReady }: { onReady: (session: SessionState) => void }) {
   const [bookName, setBookName] = useState('Household')
   const [baseCurrency, setBaseCurrency] = useState('USD')
   const [token, setToken] = useState('')
+  const [loginError, setLoginError] = useState<string | null>(null)
 
   const registerMutation = useMutation({
     mutationFn: () => register(email, password),
@@ -109,8 +84,22 @@ function SetupPanel({ onReady }: { onReady: (session: SessionState) => void }) {
   const loginMutation = useMutation({
     mutationFn: () => login(email, password),
     onSuccess: async (result) => {
+      setLoginError(null)
       setToken(result.token)
       await tryEnterExistingBook(result.token)
+    },
+    onError: (error: unknown) => {
+      if (isNetworkError(error)) {
+        setLoginError(t('loginErrorNetwork'))
+        return
+      }
+
+      if (error instanceof ApiError && (error.status === 401 || error.status === 403)) {
+        setLoginError(t('loginErrorAuth'))
+        return
+      }
+
+      setLoginError(t('loginErrorGeneric'))
     }
   })
 
@@ -147,8 +136,24 @@ function SetupPanel({ onReady }: { onReady: (session: SessionState) => void }) {
           {t('setupHint')}
         </Text>
         <form onSubmit={handleRegister} className="form-grid">
-          <TextInput label={t('emailLabel')} value={email} onChange={(event) => setEmail(event.currentTarget.value)} required />
-          <PasswordInput label={t('passwordLabel')} value={password} onChange={(event) => setPassword(event.currentTarget.value)} required />
+          <TextInput
+            label={t('emailLabel')}
+            value={email}
+            onChange={(event) => {
+              setEmail(event.currentTarget.value)
+              setLoginError(null)
+            }}
+            required
+          />
+          <PasswordInput
+            label={t('passwordLabel')}
+            value={password}
+            onChange={(event) => {
+              setPassword(event.currentTarget.value)
+              setLoginError(null)
+            }}
+            required
+          />
           <Group>
             <Button type="submit" loading={registerMutation.isPending}>
               {t('registerButton')}
@@ -157,6 +162,7 @@ function SetupPanel({ onReady }: { onReady: (session: SessionState) => void }) {
               {t('loginButton')}
             </Button>
           </Group>
+          {loginError ? <Alert color="red">{loginError}</Alert> : null}
         </form>
         <form onSubmit={handleCreateBook} className="form-grid">
           <TextInput label={t('bookNameLabel')} value={bookName} onChange={(event) => setBookName(event.currentTarget.value)} required />
@@ -183,6 +189,7 @@ function SetupPanel({ onReady }: { onReady: (session: SessionState) => void }) {
 function App() {
   const { t } = useTranslation()
   const [session, setSession] = useState<SessionState | null>(() => loadSession())
+  const navigate = useNavigate()
 
   const navItems: NavItem[] = useMemo(
     () => [
@@ -201,22 +208,6 @@ function App() {
 
   return (
     <div className="app-shell">
-      <header className="app-header">
-        <h1>{t('appTitle')}</h1>
-        <Group>
-          <LanguageSwitch />
-          <Button
-            variant="light"
-            onClick={() => {
-              clearSession()
-              setSession(null)
-            }}
-          >
-            {t('signOut')}
-          </Button>
-        </Group>
-      </header>
-
       <main className="app-main">
         <Routes>
           <Route path="/dashboard" element={<DashboardPage token={session.token} bookId={session.bookId} />} />
@@ -230,8 +221,16 @@ function App() {
           />
           <Route
             path="/settings"
-            element={<MembersPage token={session.token} bookId={session.bookId} onBookJoined={(bookId) => setSession({ ...session, bookId })} />}
+            element={
+              <SettingsPage
+                onSignOut={() => {
+                  clearSession()
+                  setSession(null)
+                }}
+              />
+            }
           />
+          <Route path="/settings/categories" element={<CategoriesSettingsPage token={session.token} bookId={session.bookId} onBack={() => navigate('/settings')} />} />
           <Route path="*" element={<Navigate to="/ledger" replace />} />
         </Routes>
       </main>

@@ -19,7 +19,7 @@ These rules are mandatory for any coding agent working in this repository.
 
 1. If a problem or ambiguity appears, do not pause to wait for user response.
 2. Choose the best reasonable path forward and continue execution.
-3. Record the decision and rationale in `TO_DECIDE.md` for later review/justification.
+3. Record the decision and rationale in `plan\TO_DECIDE.md` for later review/justification.
 
 ## Testing Rule (Always Test New Development)
 
@@ -32,6 +32,22 @@ These rules are mandatory for any coding agent working in this repository.
 1. All new or modified code must include good docstrings for public classes, methods, functions, and modules.
 2. Docstrings must clearly describe purpose, inputs, outputs, side effects, and important constraints.
 3. Avoid placeholder docstrings; keep documentation accurate and updated with behavior changes.
+
+## UI Interaction Rule (Action Menus)
+
+1. Any create/edit form opened from a top-right action menu (three-dots menu) must be shown in a popup modal, not appended inline in the page flow.
+2. Use the shared generic modal widget in `frontend/src/components/ActionFormModal.tsx` for these interactions instead of creating page-specific modal wrappers.
+
+## UI Interaction Rule (List Details)
+
+1. Clicking an item in a list should open a popup details view rather than appending details inline below or beside the list.
+2. Use the shared details modal widget in `frontend/src/components/EntityDetailsModal.tsx` for read-only detail views.
+
+## UI Input Rule (Currency)
+
+1. Never use free-text currency entry for transactional or account workflows.
+2. Use the shared dropdown component `frontend/src/components/CurrencySelect.tsx` for currency selection.
+3. Currency selectors must include and default to the current book base currency.
 
 ## Stop Condition
 

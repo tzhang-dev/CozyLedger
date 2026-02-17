@@ -3,7 +3,8 @@ import type { FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Button, Card, Group, NumberInput, Select, Stack, Switch, Text, TextInput, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
-import { createTransaction, listAccounts, listCategories, listTransactions, updateTransaction } from '../lib/cozyApi'
+import { CurrencySelect } from '../components/CurrencySelect'
+import { createTransaction, listAccounts, listBooks, listCategories, listTransactions, updateTransaction } from '../lib/cozyApi'
 import { TransactionType } from '../lib/types'
 import type { TransactionResponse } from '../lib/types'
 
@@ -23,7 +24,7 @@ export function LedgerPage({ token, bookId, mode = 'list' }: Props) {
   const [type, setType] = useState(String(TransactionType.Expense))
   const [dateUtc, setDateUtc] = useState(new Date().toISOString().slice(0, 10))
   const [amount, setAmount] = useState<number>(0)
-  const [currency, setCurrency] = useState('USD')
+  const [currency, setCurrency] = useState('')
   const [accountId, setAccountId] = useState<string | null>(null)
   const [toAccountId, setToAccountId] = useState<string | null>(null)
   const [categoryId, setCategoryId] = useState<string | null>(null)
@@ -47,6 +48,11 @@ export function LedgerPage({ token, bookId, mode = 'list' }: Props) {
     queryFn: () => listCategories(token, bookId)
   })
 
+  const booksQuery = useQuery({
+    queryKey: ['books'],
+    queryFn: () => listBooks(token)
+  })
+
   const transactionsQuery = useQuery({
     queryKey: ['transactions', bookId],
     queryFn: () => listTransactions(token, bookId)
@@ -56,6 +62,8 @@ export function LedgerPage({ token, bookId, mode = 'list' }: Props) {
     () => transactionsQuery.data?.find((item) => item.id === selectedTransactionId),
     [transactionsQuery.data, selectedTransactionId]
   )
+  const bookBaseCurrency = booksQuery.data?.find((book) => book.id === bookId)?.baseCurrency.toUpperCase() ?? 'USD'
+  const effectiveCurrency = (currency || bookBaseCurrency).toUpperCase()
   const groupedTransactions = useMemo(() => {
     const items = transactionsQuery.data ?? []
     return items.reduce<Record<string, TransactionResponse[]>>((acc, item) => {
@@ -73,7 +81,6 @@ export function LedgerPage({ token, bookId, mode = 'list' }: Props) {
     label: `${account.nameEn} (${account.currency})`,
     value: account.id
   }))
-
   const categoryOptions = (categoriesQuery.data ?? []).map((category) => ({
     label: category.nameEn,
     value: category.id
@@ -89,7 +96,7 @@ export function LedgerPage({ token, bookId, mode = 'list' }: Props) {
         type: Number(type) as TransactionType,
         dateUtc: new Date(`${dateUtc}T00:00:00.000Z`).toISOString(),
         amount,
-        currency,
+        currency: effectiveCurrency,
         accountId,
         toAccountId,
         categoryId,
@@ -115,7 +122,7 @@ export function LedgerPage({ token, bookId, mode = 'list' }: Props) {
     setType(String(TransactionType.Expense))
     setDateUtc(new Date().toISOString().slice(0, 10))
     setAmount(0)
-    setCurrency('USD')
+    setCurrency('')
     setAccountId(null)
     setToAccountId(null)
     setCategoryId(null)
@@ -177,7 +184,14 @@ export function LedgerPage({ token, bookId, mode = 'list' }: Props) {
               <Select label={t('typeLabel')} data={transactionTypeOptions} value={type} onChange={(value) => setType(value ?? String(TransactionType.Expense))} />
               <TextInput label={t('dateUtcLabel')} value={dateUtc} onChange={(event) => setDateUtc(event.currentTarget.value)} required />
               <NumberInput label={t('amountLabel')} value={amount} onChange={(value) => setAmount(Number(value ?? 0))} required />
-              <TextInput label={t('currencyLabel')} value={currency} onChange={(event) => setCurrency(event.currentTarget.value.toUpperCase())} maxLength={3} required />
+              <CurrencySelect
+                label={t('currencyLabel')}
+                value={effectiveCurrency}
+                onChange={setCurrency}
+                baseCurrency={bookBaseCurrency}
+                knownCurrencies={(accountsQuery.data ?? []).map((item) => item.currency)}
+                required
+              />
               <Select label={t('accountLabel')} data={accountOptions} value={accountId} onChange={setAccountId} searchable required />
               <Select
                 label={t('destinationAccountLabel')}

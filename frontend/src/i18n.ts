@@ -15,6 +15,13 @@ const resources = {
       navSettings: 'Settings',
       navMembers: 'Members',
       signOut: 'Sign out',
+      settingsTitle: 'Settings',
+      settingsHint: 'Manage language and account actions.',
+      accountActionsTitle: 'Account',
+      categoriesTitle: 'Categories',
+      manageCategories: 'Manage categories',
+      categoriesSettingsHint: 'Create and edit categories in settings.',
+      backButton: 'Back',
 
       setupTitle: 'Get Started',
       setupHint: 'Register or login first, then create your first book.',
@@ -22,6 +29,9 @@ const resources = {
       passwordLabel: 'Password',
       registerButton: 'Register',
       loginButton: 'Login',
+      loginErrorAuth: 'Login failed. Check your email and password.',
+      loginErrorNetwork: 'Network error. Please check your connection and try again.',
+      loginErrorGeneric: 'Unable to log in right now. Please try again.',
       bookNameLabel: 'Book name',
       baseCurrencyLabel: 'Base currency',
       tokenLabel: 'Token',
@@ -34,7 +44,7 @@ const resources = {
       topExpenseCategoriesMonth: 'Top Expense Categories (This Month)',
       noDataYet: 'No data yet.',
 
-      accountsTitle: 'Accounts & Categories',
+      accountsTitle: 'Accounts',
       editAccount: 'Edit account',
       createAccount: 'Create account',
       nameLabel: 'Name',
@@ -94,7 +104,17 @@ const resources = {
       categoryDistributionTitle: 'Category Distribution',
       categoryDistributionHint: 'Each slice/bar value is expressed in base currency.',
       noCategoryData: 'No category data for selected month.',
-      amountWithCurrency: 'Amount'
+      amountWithCurrency: 'Amount',
+
+      accountsHint: 'Select an account to view details and manage actions.',
+      accountActionsMenu: 'Account actions',
+      accountDetailsTitle: 'Account details',
+      accountNoSelection: 'No account selected.',
+      accountBalanceLabel: 'Balance',
+      noAccounts: 'No accounts yet.',
+      deleteAccount: 'Delete account',
+      deleteAccountConfirm: 'Delete account "{{name}}"?',
+      deleteAccountBlocked: 'Cannot delete this account because transactions reference it.'
     }
   },
   zh: {
@@ -110,6 +130,13 @@ const resources = {
       navSettings: '设置',
       navMembers: '成员',
       signOut: '退出登录',
+      settingsTitle: '设置',
+      settingsHint: '管理语言和账户操作。',
+      accountActionsTitle: '账户',
+      categoriesTitle: '分类',
+      manageCategories: '管理分类',
+      categoriesSettingsHint: '在设置中创建和编辑分类。',
+      backButton: '返回',
 
       setupTitle: '开始使用',
       setupHint: '请先注册或登录，然后创建你的第一个账本。',
@@ -117,6 +144,9 @@ const resources = {
       passwordLabel: '密码',
       registerButton: '注册',
       loginButton: '登录',
+      loginErrorAuth: '登录失败，请检查邮箱和密码。',
+      loginErrorNetwork: '网络异常，请检查连接后重试。',
+      loginErrorGeneric: '暂时无法登录，请稍后重试。',
       bookNameLabel: '账本名称',
       baseCurrencyLabel: '基础币种',
       tokenLabel: '令牌',
@@ -129,7 +159,7 @@ const resources = {
       topExpenseCategoriesMonth: '本月支出分类排行',
       noDataYet: '暂无数据。',
 
-      accountsTitle: '账户与分类',
+      accountsTitle: '账户',
       editAccount: '编辑账户',
       createAccount: '新建账户',
       nameLabel: '名称',
@@ -189,7 +219,17 @@ const resources = {
       categoryDistributionTitle: '分类分布',
       categoryDistributionHint: '每个图表值都以基础币种显示。',
       noCategoryData: '所选月份没有分类数据。',
-      amountWithCurrency: '金额'
+      amountWithCurrency: '金额',
+
+      accountsHint: '选择账户以查看详情并进行管理。',
+      accountActionsMenu: '账户操作',
+      accountDetailsTitle: '账户详情',
+      accountNoSelection: '未选择账户。',
+      accountBalanceLabel: '余额',
+      noAccounts: '暂无账户。',
+      deleteAccount: '删除账户',
+      deleteAccountConfirm: '确认删除账户“{{name}}”吗？',
+      deleteAccountBlocked: '该账户已被交易引用，无法删除。'
     }
   }
 } as const

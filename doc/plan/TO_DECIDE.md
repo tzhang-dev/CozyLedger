@@ -9,3 +9,7 @@
 ## 2026-02-16 - Frontend bundle size warning handling for MVP
 - Decision: Keep the current single-chunk frontend build for MVP even though Vite warns about a large JS bundle (>500KB).
 - Rationale: Functional completeness and flow stability were prioritized for MVP milestones 8-10; route-level code splitting can be added as a post-MVP optimization without changing API behavior.
+
+## 2026-02-17 - Docker Compose postgres host port binding
+- Decision: Do not publish postgres port `5432` to the host in `docker-compose.yml`.
+- Rationale: Host `5432` is commonly occupied by local Postgres installs; backend and frontend communicate with DB over the compose network, so host exposure is unnecessary for normal bundled app startup/shutdown.

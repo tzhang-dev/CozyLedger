@@ -14,6 +14,35 @@ import type {
 
 const apiBaseUrl = (import.meta.env.VITE_API_BASE_URL as string | undefined)?.trim() ?? ''
 
+/**
+ * Structured API error containing HTTP status and response payload text.
+ */
+export class ApiError extends Error {
+  status: number
+  payload: string
+
+  constructor(status: number, payload: string) {
+    super(payload || `Request failed: ${status}`)
+    this.name = 'ApiError'
+    this.status = status
+    this.payload = payload
+  }
+}
+
+/**
+ * Type guard for {@link ApiError} values.
+ */
+export function isApiError(value: unknown): value is ApiError {
+  return value instanceof ApiError
+}
+
+/**
+ * Detects network-level request failures (DNS/offline/CORS/connectivity).
+ */
+export function isNetworkError(value: unknown): value is TypeError {
+  return value instanceof TypeError
+}
+
 function buildUrl(path: string): string {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`
   if (!apiBaseUrl) {
@@ -45,7 +74,7 @@ async function requestJson<T>(
 
   if (!response.ok) {
     const text = await response.text()
-    throw new Error(text || `Request failed: ${response.status}`)
+    throw new ApiError(response.status, text)
   }
 
   if (response.status === 204) {
@@ -135,6 +164,19 @@ export function updateAccount(
     {
       method: 'PUT',
       body: JSON.stringify(payload)
+    },
+    token
+  )
+}
+
+/**
+ * Deletes an existing account in the selected book.
+ */
+export function deleteAccount(token: string, bookId: string, accountId: string): Promise<void> {
+  return requestJson<void>(
+    `/books/${bookId}/accounts/${accountId}`,
+    {
+      method: 'DELETE'
     },
     token
   )
