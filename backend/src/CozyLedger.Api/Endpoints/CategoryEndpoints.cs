@@ -7,8 +7,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CozyLedger.Api.Endpoints;
 
+/// <summary>
+/// Defines category management API endpoints.
+/// </summary>
 public static class CategoryEndpoints
 {
+    /// <summary>
+    /// Maps category endpoints onto the route builder.
+    /// </summary>
+    /// <param name="app">Route builder to configure.</param>
+    /// <returns>The original route builder for chaining.</returns>
     public static IEndpointRouteBuilder MapCategoryEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/books/{bookId:guid}/categories").RequireAuthorization();
@@ -20,6 +28,13 @@ public static class CategoryEndpoints
         return app;
     }
 
+    /// <summary>
+    /// Lists categories in a book for an authorized member.
+    /// </summary>
+    /// <param name="bookId">Book identifier.</param>
+    /// <param name="user">Authenticated user principal.</param>
+    /// <param name="dbContext">Database context.</param>
+    /// <returns>HTTP result containing category records.</returns>
     private static async Task<IResult> ListCategoriesAsync(Guid bookId, ClaimsPrincipal user, AppDbContext dbContext)
     {
         var userId = user.GetUserId();
@@ -44,6 +59,14 @@ public static class CategoryEndpoints
         return Results.Ok(categories);
     }
 
+    /// <summary>
+    /// Creates a category in the specified book.
+    /// </summary>
+    /// <param name="bookId">Book identifier.</param>
+    /// <param name="request">Category creation payload.</param>
+    /// <param name="user">Authenticated user principal.</param>
+    /// <param name="dbContext">Database context.</param>
+    /// <returns>HTTP result containing the created category.</returns>
     private static async Task<IResult> CreateCategoryAsync(
         Guid bookId,
         CreateCategoryRequest request,
@@ -93,6 +116,15 @@ public static class CategoryEndpoints
             category.IsActive));
     }
 
+    /// <summary>
+    /// Updates an existing category in the specified book.
+    /// </summary>
+    /// <param name="bookId">Book identifier.</param>
+    /// <param name="categoryId">Category identifier.</param>
+    /// <param name="request">Category update payload.</param>
+    /// <param name="user">Authenticated user principal.</param>
+    /// <param name="dbContext">Database context.</param>
+    /// <returns>HTTP result containing the updated category.</returns>
     private static async Task<IResult> UpdateCategoryAsync(
         Guid bookId,
         Guid categoryId,
@@ -148,9 +180,24 @@ public static class CategoryEndpoints
             category.IsActive));
     }
 
+    /// <summary>
+    /// Determines whether a user is a member of the specified book.
+    /// </summary>
+    /// <param name="dbContext">Database context.</param>
+    /// <param name="bookId">Book identifier.</param>
+    /// <param name="userId">User identifier.</param>
+    /// <returns><see langword="true"/> when membership exists; otherwise, <see langword="false"/>.</returns>
     private static Task<bool> IsMemberAsync(AppDbContext dbContext, Guid bookId, Guid userId)
         => dbContext.Memberships.AnyAsync(m => m.BookId == bookId && m.UserId == userId);
 
+    /// <summary>
+    /// Represents payload for category creation.
+    /// </summary>
+    /// <param name="NameEn">English category name.</param>
+    /// <param name="NameZhHans">Simplified Chinese category name.</param>
+    /// <param name="Type">Category type.</param>
+    /// <param name="ParentId">Optional parent category identifier.</param>
+    /// <param name="IsActive">Whether the category is active.</param>
     public record CreateCategoryRequest(
         string NameEn,
         string NameZhHans,
@@ -158,6 +205,14 @@ public static class CategoryEndpoints
         Guid? ParentId,
         bool IsActive);
 
+    /// <summary>
+    /// Represents payload for category updates.
+    /// </summary>
+    /// <param name="NameEn">English category name.</param>
+    /// <param name="NameZhHans">Simplified Chinese category name.</param>
+    /// <param name="Type">Category type.</param>
+    /// <param name="ParentId">Optional parent category identifier.</param>
+    /// <param name="IsActive">Whether the category is active.</param>
     public record UpdateCategoryRequest(
         string NameEn,
         string NameZhHans,
@@ -165,6 +220,15 @@ public static class CategoryEndpoints
         Guid? ParentId,
         bool IsActive);
 
+    /// <summary>
+    /// Represents category data returned by the API.
+    /// </summary>
+    /// <param name="Id">Category identifier.</param>
+    /// <param name="NameEn">English category name.</param>
+    /// <param name="NameZhHans">Simplified Chinese category name.</param>
+    /// <param name="Type">Category type.</param>
+    /// <param name="ParentId">Optional parent category identifier.</param>
+    /// <param name="IsActive">Whether the category is active.</param>
     public record CategoryResponse(
         Guid Id,
         string NameEn,

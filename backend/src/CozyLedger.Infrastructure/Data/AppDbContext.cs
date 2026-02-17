@@ -6,23 +6,73 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CozyLedger.Infrastructure.Data;
 
+/// <summary>
+/// Entity Framework Core database context for CozyLedger.
+/// </summary>
 public class AppDbContext : IdentityDbContext<ApplicationUser, IdentityRole<Guid>, Guid>
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="AppDbContext"/> class.
+    /// </summary>
+    /// <param name="options">Database context options.</param>
     public AppDbContext(DbContextOptions<AppDbContext> options) : base(options)
     {
     }
 
+    /// <summary>
+    /// Gets the set of books.
+    /// </summary>
     public DbSet<Book> Books => Set<Book>();
+
+    /// <summary>
+    /// Gets the set of book invites.
+    /// </summary>
     public DbSet<BookInvite> BookInvites => Set<BookInvite>();
+
+    /// <summary>
+    /// Gets the set of memberships.
+    /// </summary>
     public DbSet<Membership> Memberships => Set<Membership>();
+
+    /// <summary>
+    /// Gets the set of accounts.
+    /// </summary>
     public DbSet<Account> Accounts => Set<Account>();
+
+    /// <summary>
+    /// Gets the set of categories.
+    /// </summary>
     public DbSet<Category> Categories => Set<Category>();
+
+    /// <summary>
+    /// Gets the set of transactions.
+    /// </summary>
     public DbSet<Transaction> Transactions => Set<Transaction>();
+
+    /// <summary>
+    /// Gets the set of attachments.
+    /// </summary>
     public DbSet<Attachment> Attachments => Set<Attachment>();
+
+    /// <summary>
+    /// Gets the set of tags.
+    /// </summary>
     public DbSet<Tag> Tags => Set<Tag>();
+
+    /// <summary>
+    /// Gets the set of transaction-tag relationships.
+    /// </summary>
     public DbSet<TransactionTag> TransactionTags => Set<TransactionTag>();
+
+    /// <summary>
+    /// Gets the set of exchange rates.
+    /// </summary>
     public DbSet<ExchangeRate> ExchangeRates => Set<ExchangeRate>();
 
+    /// <summary>
+    /// Configures entity mappings, constraints, and relationships.
+    /// </summary>
+    /// <param name="builder">Model builder used to configure EF mappings.</param>
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);

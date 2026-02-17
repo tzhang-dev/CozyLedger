@@ -8,11 +8,18 @@ using System.Text;
 
 namespace CozyLedger.Api.Services;
 
+/// <summary>
+/// Creates JWT bearer tokens for authenticated users.
+/// </summary>
 public class JwtTokenService
 {
     private readonly JwtOptions _options;
     private readonly SigningCredentials _credentials;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="JwtTokenService"/> class.
+    /// </summary>
+    /// <param name="options">JWT configuration values.</param>
     public JwtTokenService(IOptions<JwtOptions> options)
     {
         _options = options.Value;
@@ -21,6 +28,11 @@ public class JwtTokenService
         _credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
     }
 
+    /// <summary>
+    /// Creates a signed JWT token for the specified user.
+    /// </summary>
+    /// <param name="user">Authenticated user for which the token is generated.</param>
+    /// <returns>Token payload and expiration metadata.</returns>
     public TokenResult CreateToken(ApplicationUser user)
     {
         var now = DateTime.UtcNow;
@@ -47,4 +59,9 @@ public class JwtTokenService
     }
 }
 
+/// <summary>
+/// Represents a generated JWT token and its expiration timestamp.
+/// </summary>
+/// <param name="Token">Serialized bearer token string.</param>
+/// <param name="ExpiresAtUtc">Token expiration in UTC.</param>
 public record TokenResult(string Token, DateTime ExpiresAtUtc);

@@ -8,11 +8,19 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CozyLedger.Api.Endpoints;
 
+/// <summary>
+/// Defines invitation API endpoints for book sharing.
+/// </summary>
 public static class InviteEndpoints
 {
     private const int InviteTokenBytes = 32;
     private static readonly TimeSpan InviteLifetime = TimeSpan.FromDays(7);
 
+    /// <summary>
+    /// Maps invitation endpoints onto the route builder.
+    /// </summary>
+    /// <param name="app">Route builder to configure.</param>
+    /// <returns>The original route builder for chaining.</returns>
     public static IEndpointRouteBuilder MapInviteEndpoints(this IEndpointRouteBuilder app)
     {
         app.MapPost("/books/{bookId:guid}/invites", CreateInviteAsync)
@@ -24,6 +32,14 @@ public static class InviteEndpoints
         return app;
     }
 
+    /// <summary>
+    /// Creates a one-time invitation token for a book member.
+    /// </summary>
+    /// <param name="bookId">Book identifier.</param>
+    /// <param name="user">Authenticated user principal.</param>
+    /// <param name="dbContext">Database context.</param>
+    /// <param name="request">Incoming HTTP request used to construct invite URL.</param>
+    /// <returns>HTTP result containing invitation metadata.</returns>
     private static async Task<IResult> CreateInviteAsync(
         Guid bookId,
         ClaimsPrincipal user,
@@ -56,6 +72,13 @@ public static class InviteEndpoints
         return Results.Ok(new InviteResponse(token, inviteUrl, expiresAt));
     }
 
+    /// <summary>
+    /// Accepts an invitation token and adds the caller to the target book.
+    /// </summary>
+    /// <param name="token">Invitation token value.</param>
+    /// <param name="user">Authenticated user principal.</param>
+    /// <param name="dbContext">Database context.</param>
+    /// <returns>HTTP result indicating acceptance outcome.</returns>
     private static async Task<IResult> AcceptInviteAsync(
         string token,
         ClaimsPrincipal user,
@@ -90,7 +113,17 @@ public static class InviteEndpoints
         return Results.Ok(new AcceptInviteResponse(invite.BookId));
     }
 
+    /// <summary>
+    /// Represents invitation metadata returned on invite creation.
+    /// </summary>
+    /// <param name="Token">Invitation token.</param>
+    /// <param name="InviteUrl">Absolute invite URL.</param>
+    /// <param name="ExpiresAtUtc">UTC expiration timestamp.</param>
     public record InviteResponse(string Token, string InviteUrl, DateTime ExpiresAtUtc);
 
+    /// <summary>
+    /// Represents the result of accepting an invitation.
+    /// </summary>
+    /// <param name="BookId">Book identifier the user joined.</param>
     public record AcceptInviteResponse(Guid BookId);
 }

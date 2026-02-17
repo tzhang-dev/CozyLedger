@@ -7,8 +7,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CozyLedger.Api.Endpoints;
 
+/// <summary>
+/// Defines transaction management API endpoints.
+/// </summary>
 public static class TransactionEndpoints
 {
+    /// <summary>
+    /// Maps transaction endpoints onto the route builder.
+    /// </summary>
+    /// <param name="app">Route builder to configure.</param>
+    /// <returns>The original route builder for chaining.</returns>
     public static IEndpointRouteBuilder MapTransactionEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/books/{bookId:guid}/transactions").RequireAuthorization();
@@ -20,6 +28,13 @@ public static class TransactionEndpoints
         return app;
     }
 
+    /// <summary>
+    /// Lists transactions in a book for an authorized member.
+    /// </summary>
+    /// <param name="bookId">Book identifier.</param>
+    /// <param name="user">Authenticated user principal.</param>
+    /// <param name="dbContext">Database context.</param>
+    /// <returns>HTTP result containing transaction records.</returns>
     private static async Task<IResult> ListTransactionsAsync(Guid bookId, ClaimsPrincipal user, AppDbContext dbContext)
     {
         var userId = user.GetUserId();
@@ -51,6 +66,14 @@ public static class TransactionEndpoints
         return Results.Ok(transactions);
     }
 
+    /// <summary>
+    /// Creates a transaction in the specified book.
+    /// </summary>
+    /// <param name="bookId">Book identifier.</param>
+    /// <param name="request">Transaction creation payload.</param>
+    /// <param name="user">Authenticated user principal.</param>
+    /// <param name="dbContext">Database context.</param>
+    /// <returns>HTTP result containing the created transaction.</returns>
     private static async Task<IResult> CreateTransactionAsync(
         Guid bookId,
         CreateTransactionRequest request,
@@ -105,6 +128,15 @@ public static class TransactionEndpoints
             transaction.CreatedAtUtc));
     }
 
+    /// <summary>
+    /// Updates an existing transaction in the specified book.
+    /// </summary>
+    /// <param name="bookId">Book identifier.</param>
+    /// <param name="transactionId">Transaction identifier.</param>
+    /// <param name="request">Transaction update payload.</param>
+    /// <param name="user">Authenticated user principal.</param>
+    /// <param name="dbContext">Database context.</param>
+    /// <returns>HTTP result containing the updated transaction.</returns>
     private static async Task<IResult> UpdateTransactionAsync(
         Guid bookId,
         Guid transactionId,
@@ -158,6 +190,13 @@ public static class TransactionEndpoints
             transaction.CreatedAtUtc));
     }
 
+    /// <summary>
+    /// Normalizes amount sign based on transaction type and refund state.
+    /// </summary>
+    /// <param name="type">Transaction type.</param>
+    /// <param name="amount">Input amount.</param>
+    /// <param name="isRefund">Whether the transaction is a refund.</param>
+    /// <returns>Normalized amount value.</returns>
     private static decimal NormalizeAmount(TransactionType type, decimal amount, bool isRefund)
     {
         var normalized = Math.Abs(amount);
@@ -169,6 +208,13 @@ public static class TransactionEndpoints
         return normalized;
     }
 
+    /// <summary>
+    /// Validates transaction constraints before persistence.
+    /// </summary>
+    /// <param name="dbContext">Database context.</param>
+    /// <param name="bookId">Book identifier.</param>
+    /// <param name="request">Transaction payload to validate.</param>
+    /// <returns>Error message when invalid; otherwise <see langword="null"/>.</returns>
     private static async Task<string?> ValidateTransactionAsync(AppDbContext dbContext, Guid bookId, CreateTransactionRequest request)
     {
         if (request.Amount == 0)
@@ -253,9 +299,29 @@ public static class TransactionEndpoints
         return null;
     }
 
+    /// <summary>
+    /// Determines whether a user is a member of the specified book.
+    /// </summary>
+    /// <param name="dbContext">Database context.</param>
+    /// <param name="bookId">Book identifier.</param>
+    /// <param name="userId">User identifier.</param>
+    /// <returns><see langword="true"/> when membership exists; otherwise, <see langword="false"/>.</returns>
     private static Task<bool> IsMemberAsync(AppDbContext dbContext, Guid bookId, Guid userId)
         => dbContext.Memberships.AnyAsync(m => m.BookId == bookId && m.UserId == userId);
 
+    /// <summary>
+    /// Represents payload for transaction creation.
+    /// </summary>
+    /// <param name="Type">Transaction type.</param>
+    /// <param name="DateUtc">Transaction date in UTC.</param>
+    /// <param name="Amount">Transaction amount.</param>
+    /// <param name="Currency">ISO 4217 currency code.</param>
+    /// <param name="AccountId">Source account identifier.</param>
+    /// <param name="ToAccountId">Optional destination account identifier.</param>
+    /// <param name="CategoryId">Optional category identifier.</param>
+    /// <param name="MemberId">Optional related member identifier.</param>
+    /// <param name="Note">Optional note.</param>
+    /// <param name="IsRefund">Whether the transaction is a refund.</param>
     public record CreateTransactionRequest(
         TransactionType Type,
         DateTime DateUtc,
@@ -268,6 +334,19 @@ public static class TransactionEndpoints
         string? Note,
         bool IsRefund);
 
+    /// <summary>
+    /// Represents payload for transaction updates.
+    /// </summary>
+    /// <param name="Type">Transaction type.</param>
+    /// <param name="DateUtc">Transaction date in UTC.</param>
+    /// <param name="Amount">Transaction amount.</param>
+    /// <param name="Currency">ISO 4217 currency code.</param>
+    /// <param name="AccountId">Source account identifier.</param>
+    /// <param name="ToAccountId">Optional destination account identifier.</param>
+    /// <param name="CategoryId">Optional category identifier.</param>
+    /// <param name="MemberId">Optional related member identifier.</param>
+    /// <param name="Note">Optional note.</param>
+    /// <param name="IsRefund">Whether the transaction is a refund.</param>
     public record UpdateTransactionRequest(
         TransactionType Type,
         DateTime DateUtc,
@@ -280,6 +359,11 @@ public static class TransactionEndpoints
         string? Note,
         bool IsRefund)
     {
+        /// <summary>
+        /// Converts this update payload into a create payload for shared validation.
+        /// </summary>
+        /// <param name="fallbackAccountId">Fallback account id used when request account id is empty.</param>
+        /// <returns>A create request with equivalent values.</returns>
         public CreateTransactionRequest ToCreateRequest(Guid fallbackAccountId)
         {
             return new CreateTransactionRequest(
@@ -296,6 +380,21 @@ public static class TransactionEndpoints
         }
     }
 
+    /// <summary>
+    /// Represents transaction data returned by the API.
+    /// </summary>
+    /// <param name="Id">Transaction identifier.</param>
+    /// <param name="Type">Transaction type.</param>
+    /// <param name="DateUtc">Transaction date in UTC.</param>
+    /// <param name="Amount">Transaction amount.</param>
+    /// <param name="Currency">ISO 4217 currency code.</param>
+    /// <param name="AccountId">Source account identifier.</param>
+    /// <param name="ToAccountId">Optional destination account identifier.</param>
+    /// <param name="CategoryId">Optional category identifier.</param>
+    /// <param name="MemberId">Optional related member identifier.</param>
+    /// <param name="Note">Optional note.</param>
+    /// <param name="IsRefund">Whether the transaction is a refund.</param>
+    /// <param name="CreatedAtUtc">Creation timestamp in UTC.</param>
     public record TransactionResponse(
         Guid Id,
         TransactionType Type,

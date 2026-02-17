@@ -2,9 +2,11 @@ using CozyLedger.Api.Endpoints;
 using CozyLedger.Api.Options;
 using CozyLedger.Api.Services;
 using CozyLedger.Infrastructure;
+using CozyLedger.Infrastructure.Data;
 using CozyLedger.Infrastructure.Identity;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 
@@ -45,9 +47,24 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 
 builder.Services.AddAuthorization();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendDev", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173", "http://127.0.0.1:5173")
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+await using (var scope = app.Services.CreateAsyncScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    await dbContext.Database.EnsureCreatedAsync();
+}
 
 if (app.Environment.IsDevelopment())
 {
@@ -55,6 +72,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("FrontendDev");
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -72,4 +90,7 @@ app.MapReportEndpoints();
 
 app.Run();
 
+/// <summary>
+/// Marker type used by integration tests to host the API application.
+/// </summary>
 public partial class Program { }

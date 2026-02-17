@@ -4,8 +4,16 @@ using Microsoft.AspNetCore.Identity;
 
 namespace CozyLedger.Api.Endpoints;
 
+/// <summary>
+/// Defines authentication-related API endpoints.
+/// </summary>
 public static class AuthEndpoints
 {
+    /// <summary>
+    /// Maps authentication endpoints onto the route builder.
+    /// </summary>
+    /// <param name="app">Route builder to configure.</param>
+    /// <returns>The original route builder for chaining.</returns>
     public static IEndpointRouteBuilder MapAuthEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/auth");
@@ -16,6 +24,13 @@ public static class AuthEndpoints
         return app;
     }
 
+    /// <summary>
+    /// Registers a new user account and returns an access token.
+    /// </summary>
+    /// <param name="request">Registration payload.</param>
+    /// <param name="userManager">ASP.NET Core user manager.</param>
+    /// <param name="tokenService">Service used to generate JWT tokens.</param>
+    /// <returns>HTTP result containing registration outcome and token when successful.</returns>
     private static async Task<IResult> RegisterAsync(
         RegisterRequest request,
         UserManager<ApplicationUser> userManager,
@@ -50,6 +65,13 @@ public static class AuthEndpoints
         return Results.Ok(new AuthResponse(token.Token, token.ExpiresAtUtc));
     }
 
+    /// <summary>
+    /// Authenticates an existing user and returns a new access token.
+    /// </summary>
+    /// <param name="request">Login payload.</param>
+    /// <param name="userManager">ASP.NET Core user manager.</param>
+    /// <param name="tokenService">Service used to generate JWT tokens.</param>
+    /// <returns>HTTP result containing an authentication token when credentials are valid.</returns>
     private static async Task<IResult> LoginAsync(
         LoginRequest request,
         UserManager<ApplicationUser> userManager,
@@ -76,9 +98,26 @@ public static class AuthEndpoints
         return Results.Ok(new AuthResponse(token.Token, token.ExpiresAtUtc));
     }
 
+    /// <summary>
+    /// Represents payload for user registration.
+    /// </summary>
+    /// <param name="Email">User email address.</param>
+    /// <param name="Password">Plain-text password submitted for account creation.</param>
+    /// <param name="DisplayName">Optional display name.</param>
+    /// <param name="Locale">Optional locale code.</param>
     public record RegisterRequest(string Email, string Password, string? DisplayName, string? Locale);
 
+    /// <summary>
+    /// Represents payload for user login.
+    /// </summary>
+    /// <param name="Email">User email address.</param>
+    /// <param name="Password">Plain-text password.</param>
     public record LoginRequest(string Email, string Password);
 
+    /// <summary>
+    /// Represents a successful authentication response.
+    /// </summary>
+    /// <param name="Token">JWT bearer token.</param>
+    /// <param name="ExpiresAtUtc">UTC expiration timestamp.</param>
     public record AuthResponse(string Token, DateTime ExpiresAtUtc);
 }

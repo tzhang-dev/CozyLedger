@@ -11,15 +11,26 @@ using Xunit;
 
 namespace CozyLedger.Api.Tests;
 
+/// <summary>
+/// Verifies report endpoints for summary conversion and category distribution.
+/// </summary>
 public class ReportEndpointsTests : IClassFixture<PostgresContainerFixture>
 {
     private readonly PostgresContainerFixture _fixture;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ReportEndpointsTests"/> class.
+    /// </summary>
+    /// <param name="fixture">Shared PostgreSQL container fixture.</param>
     public ReportEndpointsTests(PostgresContainerFixture fixture)
     {
         _fixture = fixture;
     }
 
+    /// <summary>
+    /// Verifies monthly and yearly summaries use the latest rate effective on or before transaction date.
+    /// </summary>
+    /// <returns>A task that completes when assertions are validated.</returns>
     [Fact]
     public async Task Monthly_and_yearly_summary_convert_to_base_currency_using_latest_rate_on_or_before_date()
     {
@@ -87,6 +98,10 @@ public class ReportEndpointsTests : IClassFixture<PostgresContainerFixture>
         yearly.NetTotal.Should().Be(90m);
     }
 
+    /// <summary>
+    /// Verifies category distribution can convert using inverse rates when direct rates are missing.
+    /// </summary>
+    /// <returns>A task that completes when assertions are validated.</returns>
     [Fact]
     public async Task Category_distribution_uses_inverse_rate_fallback_when_direct_rate_is_missing()
     {
@@ -146,6 +161,10 @@ public class ReportEndpointsTests : IClassFixture<PostgresContainerFixture>
         distribution.Items.Single(i => i.CategoryNameEn == "Food").TotalBaseAmount.Should().Be(10m);
     }
 
+    /// <summary>
+    /// Verifies summary endpoint returns unprocessable entity when exchange rates are missing.
+    /// </summary>
+    /// <returns>A task that completes when assertions are validated.</returns>
     [Fact]
     public async Task Summary_returns_unprocessable_entity_when_exchange_rate_is_missing()
     {
@@ -179,6 +198,12 @@ public class ReportEndpointsTests : IClassFixture<PostgresContainerFixture>
         document.RootElement.GetProperty("missingRates").GetArrayLength().Should().BeGreaterThan(0);
     }
 
+    /// <summary>
+    /// Registers a test user and returns the issued JWT token.
+    /// </summary>
+    /// <param name="client">HTTP client targeting the test server.</param>
+    /// <param name="email">Email address to register.</param>
+    /// <returns>JWT token string.</returns>
     private static async Task<string> RegisterAndGetToken(HttpClient client, string email)
     {
         var response = await client.PostAsJsonAsync("/auth/register", new RegisterRequest(
@@ -191,6 +216,13 @@ public class ReportEndpointsTests : IClassFixture<PostgresContainerFixture>
         return result!.Token;
     }
 
+    /// <summary>
+    /// Creates a book and returns its identifier.
+    /// </summary>
+    /// <param name="client">HTTP client targeting the test server.</param>
+    /// <param name="name">Book name.</param>
+    /// <param name="baseCurrency">Book base currency code.</param>
+    /// <returns>Created book identifier.</returns>
     private static async Task<Guid> CreateBookAsync(HttpClient client, string name, string baseCurrency)
     {
         var response = await client.PostAsJsonAsync("/books", new CreateBookRequest(name, baseCurrency));
@@ -199,6 +231,14 @@ public class ReportEndpointsTests : IClassFixture<PostgresContainerFixture>
         return result!.Id;
     }
 
+    /// <summary>
+    /// Creates an account in the specified book and returns its identifier.
+    /// </summary>
+    /// <param name="client">HTTP client targeting the test server.</param>
+    /// <param name="bookId">Book identifier.</param>
+    /// <param name="name">Account name.</param>
+    /// <param name="currency">Account currency code.</param>
+    /// <returns>Created account identifier.</returns>
     private static async Task<Guid> CreateAccountAsync(HttpClient client, Guid bookId, string name, string currency)
     {
         var response = await client.PostAsJsonAsync($"/books/{bookId}/accounts", new AccountRequest(
@@ -214,6 +254,14 @@ public class ReportEndpointsTests : IClassFixture<PostgresContainerFixture>
         return result!.Id;
     }
 
+    /// <summary>
+    /// Creates a category in the specified book and returns its identifier.
+    /// </summary>
+    /// <param name="client">HTTP client targeting the test server.</param>
+    /// <param name="bookId">Book identifier.</param>
+    /// <param name="name">Category name.</param>
+    /// <param name="type">Category type.</param>
+    /// <returns>Created category identifier.</returns>
     private static async Task<Guid> CreateCategoryAsync(HttpClient client, Guid bookId, string name, CategoryType type)
     {
         var response = await client.PostAsJsonAsync($"/books/{bookId}/categories", new CategoryRequest(
@@ -227,6 +275,19 @@ public class ReportEndpointsTests : IClassFixture<PostgresContainerFixture>
         return result!.Id;
     }
 
+    /// <summary>
+    /// Creates a transaction used in reporting tests.
+    /// </summary>
+    /// <param name="client">HTTP client targeting the test server.</param>
+    /// <param name="bookId">Book identifier.</param>
+    /// <param name="type">Transaction type.</param>
+    /// <param name="dateUtc">Transaction date in UTC.</param>
+    /// <param name="amount">Amount.</param>
+    /// <param name="currency">Currency code.</param>
+    /// <param name="accountId">Account identifier.</param>
+    /// <param name="categoryId">Category identifier.</param>
+    /// <param name="isRefund">Refund flag.</param>
+    /// <returns>A task that completes when transaction creation succeeds.</returns>
     private static async Task CreateTransactionAsync(
         HttpClient client,
         Guid bookId,
@@ -252,6 +313,12 @@ public class ReportEndpointsTests : IClassFixture<PostgresContainerFixture>
         response.EnsureSuccessStatusCode();
     }
 
+    /// <summary>
+    /// Inserts exchange rate rows for reporting conversion tests.
+    /// </summary>
+    /// <param name="factory">Test application factory.</param>
+    /// <param name="rates">Exchange rates to persist.</param>
+    /// <returns>A task that completes when rates are saved.</returns>
     private static async Task SeedExchangeRatesAsync(TestWebApplicationFactory factory, params ExchangeRate[] rates)
     {
         using var scope = factory.Services.CreateScope();
@@ -260,6 +327,11 @@ public class ReportEndpointsTests : IClassFixture<PostgresContainerFixture>
         await dbContext.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Ensures the test database schema exists.
+    /// </summary>
+    /// <param name="factory">Test application factory.</param>
+    /// <returns>A task that completes when schema setup is done.</returns>
     private static async Task EnsureDatabaseAsync(TestWebApplicationFactory factory)
     {
         using var scope = factory.Services.CreateScope();
@@ -267,14 +339,47 @@ public class ReportEndpointsTests : IClassFixture<PostgresContainerFixture>
         await dbContext.Database.EnsureCreatedAsync();
     }
 
+    /// <summary>
+    /// Registration request payload used in tests.
+    /// </summary>
+    /// <param name="Email">User email address.</param>
+    /// <param name="Password">Plain-text password.</param>
+    /// <param name="DisplayName">Optional display name.</param>
+    /// <param name="Locale">Optional locale code.</param>
     private record RegisterRequest(string Email, string Password, string? DisplayName, string? Locale);
 
+    /// <summary>
+    /// Authentication response payload used in tests.
+    /// </summary>
+    /// <param name="Token">JWT bearer token.</param>
+    /// <param name="ExpiresAtUtc">UTC expiration timestamp.</param>
     private record AuthResponse(string Token, DateTime ExpiresAtUtc);
 
+    /// <summary>
+    /// Book creation request payload used in tests.
+    /// </summary>
+    /// <param name="Name">Book name.</param>
+    /// <param name="BaseCurrency">Base currency code.</param>
     private record CreateBookRequest(string Name, string? BaseCurrency);
 
+    /// <summary>
+    /// Book response payload used in tests.
+    /// </summary>
+    /// <param name="Id">Book identifier.</param>
+    /// <param name="Name">Book name.</param>
+    /// <param name="BaseCurrency">Book base currency code.</param>
     private record BookResponse(Guid Id, string Name, string BaseCurrency);
 
+    /// <summary>
+    /// Account request payload used in tests.
+    /// </summary>
+    /// <param name="NameEn">English account name.</param>
+    /// <param name="NameZhHans">Simplified Chinese account name.</param>
+    /// <param name="Type">Account type.</param>
+    /// <param name="Currency">Currency code.</param>
+    /// <param name="IsHidden">Hidden flag.</param>
+    /// <param name="IncludeInNetWorth">Net worth inclusion flag.</param>
+    /// <param name="Note">Optional note.</param>
     private record AccountRequest(
         string NameEn,
         string NameZhHans,
@@ -284,6 +389,17 @@ public class ReportEndpointsTests : IClassFixture<PostgresContainerFixture>
         bool IncludeInNetWorth,
         string? Note);
 
+    /// <summary>
+    /// Account response payload used in tests.
+    /// </summary>
+    /// <param name="Id">Account identifier.</param>
+    /// <param name="NameEn">English account name.</param>
+    /// <param name="NameZhHans">Simplified Chinese account name.</param>
+    /// <param name="Type">Account type.</param>
+    /// <param name="Currency">Currency code.</param>
+    /// <param name="IsHidden">Hidden flag.</param>
+    /// <param name="IncludeInNetWorth">Net worth inclusion flag.</param>
+    /// <param name="Note">Optional note.</param>
     private record AccountResponse(
         Guid Id,
         string NameEn,
@@ -294,6 +410,14 @@ public class ReportEndpointsTests : IClassFixture<PostgresContainerFixture>
         bool IncludeInNetWorth,
         string? Note);
 
+    /// <summary>
+    /// Category request payload used in tests.
+    /// </summary>
+    /// <param name="NameEn">English category name.</param>
+    /// <param name="NameZhHans">Simplified Chinese category name.</param>
+    /// <param name="Type">Category type.</param>
+    /// <param name="ParentId">Optional parent category identifier.</param>
+    /// <param name="IsActive">Active flag.</param>
     private record CategoryRequest(
         string NameEn,
         string NameZhHans,
@@ -301,6 +425,15 @@ public class ReportEndpointsTests : IClassFixture<PostgresContainerFixture>
         Guid? ParentId,
         bool IsActive);
 
+    /// <summary>
+    /// Category response payload used in tests.
+    /// </summary>
+    /// <param name="Id">Category identifier.</param>
+    /// <param name="NameEn">English category name.</param>
+    /// <param name="NameZhHans">Simplified Chinese category name.</param>
+    /// <param name="Type">Category type.</param>
+    /// <param name="ParentId">Optional parent category identifier.</param>
+    /// <param name="IsActive">Active flag.</param>
     private record CategoryResponse(
         Guid Id,
         string NameEn,
@@ -309,6 +442,19 @@ public class ReportEndpointsTests : IClassFixture<PostgresContainerFixture>
         Guid? ParentId,
         bool IsActive);
 
+    /// <summary>
+    /// Transaction request payload used in tests.
+    /// </summary>
+    /// <param name="Type">Transaction type.</param>
+    /// <param name="DateUtc">Transaction date in UTC.</param>
+    /// <param name="Amount">Amount.</param>
+    /// <param name="Currency">Currency code.</param>
+    /// <param name="AccountId">Account identifier.</param>
+    /// <param name="ToAccountId">Optional destination account identifier.</param>
+    /// <param name="CategoryId">Optional category identifier.</param>
+    /// <param name="MemberId">Optional member identifier.</param>
+    /// <param name="Note">Optional note.</param>
+    /// <param name="IsRefund">Refund flag.</param>
     private record TransactionRequest(
         TransactionType Type,
         DateTime DateUtc,
@@ -321,6 +467,15 @@ public class ReportEndpointsTests : IClassFixture<PostgresContainerFixture>
         string? Note,
         bool IsRefund);
 
+    /// <summary>
+    /// Summary response payload used in tests.
+    /// </summary>
+    /// <param name="BaseCurrency">Base currency code.</param>
+    /// <param name="PeriodStartUtc">Period start in UTC.</param>
+    /// <param name="PeriodEndExclusiveUtc">Period end in UTC.</param>
+    /// <param name="IncomeTotal">Income total.</param>
+    /// <param name="ExpenseTotal">Expense total.</param>
+    /// <param name="NetTotal">Net total.</param>
     private record SummaryResponse(
         string BaseCurrency,
         DateTime PeriodStartUtc,
@@ -329,6 +484,14 @@ public class ReportEndpointsTests : IClassFixture<PostgresContainerFixture>
         decimal ExpenseTotal,
         decimal NetTotal);
 
+    /// <summary>
+    /// Category distribution response payload used in tests.
+    /// </summary>
+    /// <param name="BaseCurrency">Base currency code.</param>
+    /// <param name="PeriodStartUtc">Period start in UTC.</param>
+    /// <param name="PeriodEndExclusiveUtc">Period end in UTC.</param>
+    /// <param name="Type">Category type.</param>
+    /// <param name="Items">Distribution items.</param>
     private record CategoryDistributionResponse(
         string BaseCurrency,
         DateTime PeriodStartUtc,
@@ -336,6 +499,13 @@ public class ReportEndpointsTests : IClassFixture<PostgresContainerFixture>
         CategoryType Type,
         List<CategoryDistributionItem> Items);
 
+    /// <summary>
+    /// Category distribution item payload used in tests.
+    /// </summary>
+    /// <param name="CategoryId">Category identifier.</param>
+    /// <param name="CategoryNameEn">English category name.</param>
+    /// <param name="CategoryNameZhHans">Simplified Chinese category name.</param>
+    /// <param name="TotalBaseAmount">Total amount in base currency.</param>
     private record CategoryDistributionItem(
         Guid CategoryId,
         string CategoryNameEn,

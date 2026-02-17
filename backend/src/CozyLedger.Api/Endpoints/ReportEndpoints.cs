@@ -7,8 +7,16 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CozyLedger.Api.Endpoints;
 
+/// <summary>
+/// Defines reporting API endpoints for summaries and category distributions.
+/// </summary>
 public static class ReportEndpoints
 {
+    /// <summary>
+    /// Maps report endpoints onto the route builder.
+    /// </summary>
+    /// <param name="app">Route builder to configure.</param>
+    /// <returns>The original route builder for chaining.</returns>
     public static IEndpointRouteBuilder MapReportEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/books/{bookId:guid}/reports").RequireAuthorization();
@@ -20,6 +28,15 @@ public static class ReportEndpoints
         return app;
     }
 
+    /// <summary>
+    /// Builds a monthly summary report for the specified period.
+    /// </summary>
+    /// <param name="bookId">Book identifier.</param>
+    /// <param name="year">UTC report year.</param>
+    /// <param name="month">UTC report month.</param>
+    /// <param name="user">Authenticated user principal.</param>
+    /// <param name="dbContext">Database context.</param>
+    /// <returns>HTTP result containing monthly summary totals.</returns>
     private static async Task<IResult> GetMonthlySummaryAsync(
         Guid bookId,
         int year,
@@ -38,6 +55,14 @@ public static class ReportEndpoints
         return await BuildSummaryResponseAsync(bookId, periodStartUtc, periodEndExclusiveUtc, user, dbContext);
     }
 
+    /// <summary>
+    /// Builds a yearly summary report for the specified year.
+    /// </summary>
+    /// <param name="bookId">Book identifier.</param>
+    /// <param name="year">UTC report year.</param>
+    /// <param name="user">Authenticated user principal.</param>
+    /// <param name="dbContext">Database context.</param>
+    /// <returns>HTTP result containing yearly summary totals.</returns>
     private static async Task<IResult> GetYearlySummaryAsync(
         Guid bookId,
         int year,
@@ -50,6 +75,15 @@ public static class ReportEndpoints
         return await BuildSummaryResponseAsync(bookId, periodStartUtc, periodEndExclusiveUtc, user, dbContext);
     }
 
+    /// <summary>
+    /// Builds a summary response by aggregating income and expense totals in base currency.
+    /// </summary>
+    /// <param name="bookId">Book identifier.</param>
+    /// <param name="periodStartUtc">Inclusive report period start in UTC.</param>
+    /// <param name="periodEndExclusiveUtc">Exclusive report period end in UTC.</param>
+    /// <param name="user">Authenticated user principal.</param>
+    /// <param name="dbContext">Database context.</param>
+    /// <returns>HTTP result containing summary data or validation errors.</returns>
     private static async Task<IResult> BuildSummaryResponseAsync(
         Guid bookId,
         DateTime periodStartUtc,
@@ -103,6 +137,16 @@ public static class ReportEndpoints
             incomeTotal - expenseTotal));
     }
 
+    /// <summary>
+    /// Builds category distribution totals for a year or month and a category type.
+    /// </summary>
+    /// <param name="bookId">Book identifier.</param>
+    /// <param name="year">UTC report year.</param>
+    /// <param name="month">Optional UTC report month.</param>
+    /// <param name="type">Category type to aggregate.</param>
+    /// <param name="user">Authenticated user principal.</param>
+    /// <param name="dbContext">Database context.</param>
+    /// <returns>HTTP result containing category distribution totals.</returns>
     private static async Task<IResult> GetCategoryDistributionAsync(
         Guid bookId,
         int year,
@@ -200,6 +244,14 @@ public static class ReportEndpoints
             categories));
     }
 
+    /// <summary>
+    /// Converts transactions to report base currency using latest applicable exchange rates.
+    /// </summary>
+    /// <param name="transactions">Transactions to convert.</param>
+    /// <param name="baseCurrency">Target base currency code.</param>
+    /// <param name="reportEndExclusiveUtc">Exclusive report end timestamp used to bound rate lookup.</param>
+    /// <param name="dbContext">Database context.</param>
+    /// <returns>Converted values and missing-rate diagnostics.</returns>
     private static async Task<ConversionResult> ConvertTransactionsToBaseCurrencyAsync(
         IReadOnlyCollection<Transaction> transactions,
         string baseCurrency,
@@ -269,9 +321,27 @@ public static class ReportEndpoints
         return new ConversionResult(converted, missingRateErrors);
     }
 
+    /// <summary>
+    /// Determines whether a user is a member of the specified book.
+    /// </summary>
+    /// <param name="dbContext">Database context.</param>
+    /// <param name="bookId">Book identifier.</param>
+    /// <param name="userId">User identifier.</param>
+    /// <returns><see langword="true"/> when membership exists; otherwise, <see langword="false"/>.</returns>
     private static Task<bool> IsMemberAsync(AppDbContext dbContext, Guid bookId, Guid userId)
         => dbContext.Memberships.AnyAsync(m => m.BookId == bookId && m.UserId == userId);
 
+    /// <summary>
+    /// Represents joined transaction-category data used for category aggregation.
+    /// </summary>
+    /// <param name="TransactionId">Transaction identifier.</param>
+    /// <param name="DateUtc">Transaction date in UTC.</param>
+    /// <param name="Type">Transaction type.</param>
+    /// <param name="Amount">Transaction amount.</param>
+    /// <param name="Currency">Transaction currency code.</param>
+    /// <param name="CategoryId">Category identifier.</param>
+    /// <param name="NameEn">English category name.</param>
+    /// <param name="NameZhHans">Simplified Chinese category name.</param>
     private record CategoryTransactionRow(
         Guid TransactionId,
         DateTime DateUtc,
@@ -282,10 +352,30 @@ public static class ReportEndpoints
         string NameEn,
         string NameZhHans);
 
+    /// <summary>
+    /// Represents a converted transaction amount in report base currency.
+    /// </summary>
+    /// <param name="TransactionId">Transaction identifier.</param>
+    /// <param name="Type">Transaction type.</param>
+    /// <param name="BaseAmount">Amount converted into report base currency.</param>
     private record ConvertedTransaction(Guid TransactionId, TransactionType Type, decimal BaseAmount);
 
+    /// <summary>
+    /// Represents conversion output including converted values and missing rate messages.
+    /// </summary>
+    /// <param name="Converted">Converted transaction amounts.</param>
+    /// <param name="MissingRateErrors">Messages describing missing rate data.</param>
     private record ConversionResult(List<ConvertedTransaction> Converted, List<string> MissingRateErrors);
 
+    /// <summary>
+    /// Represents summary report totals for a period.
+    /// </summary>
+    /// <param name="BaseCurrency">Report base currency code.</param>
+    /// <param name="PeriodStartUtc">Inclusive period start in UTC.</param>
+    /// <param name="PeriodEndExclusiveUtc">Exclusive period end in UTC.</param>
+    /// <param name="IncomeTotal">Total income converted into base currency.</param>
+    /// <param name="ExpenseTotal">Total expense converted into base currency.</param>
+    /// <param name="NetTotal">Net total equal to income minus expense.</param>
     public record SummaryReportResponse(
         string BaseCurrency,
         DateTime PeriodStartUtc,
@@ -294,6 +384,14 @@ public static class ReportEndpoints
         decimal ExpenseTotal,
         decimal NetTotal);
 
+    /// <summary>
+    /// Represents category distribution totals for a report period.
+    /// </summary>
+    /// <param name="BaseCurrency">Report base currency code.</param>
+    /// <param name="PeriodStartUtc">Inclusive period start in UTC.</param>
+    /// <param name="PeriodEndExclusiveUtc">Exclusive period end in UTC.</param>
+    /// <param name="Type">Category type included in the distribution.</param>
+    /// <param name="Items">Category total items sorted by absolute amount descending.</param>
     public record CategoryDistributionResponse(
         string BaseCurrency,
         DateTime PeriodStartUtc,
@@ -301,6 +399,13 @@ public static class ReportEndpoints
         CategoryType Type,
         List<CategoryDistributionItemResponse> Items);
 
+    /// <summary>
+    /// Represents one category total item in a distribution report.
+    /// </summary>
+    /// <param name="CategoryId">Category identifier.</param>
+    /// <param name="CategoryNameEn">English category name.</param>
+    /// <param name="CategoryNameZhHans">Simplified Chinese category name.</param>
+    /// <param name="TotalBaseAmount">Total amount converted into report base currency.</param>
     public record CategoryDistributionItemResponse(
         Guid CategoryId,
         string CategoryNameEn,
