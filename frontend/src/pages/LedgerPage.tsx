@@ -55,6 +55,18 @@ export function LedgerPage({ token, bookId }: Props) {
     () => transactionsQuery.data?.find((item) => item.id === selectedTransactionId),
     [transactionsQuery.data, selectedTransactionId]
   )
+  const groupedTransactions = useMemo(() => {
+    const items = transactionsQuery.data ?? []
+    return items.reduce<Record<string, TransactionResponse[]>>((acc, item) => {
+      const key = item.dateUtc.slice(0, 10)
+      if (!acc[key]) {
+        acc[key] = []
+      }
+
+      acc[key].push(item)
+      return acc
+    }, {})
+  }, [transactionsQuery.data])
 
   const accountOptions = (accountsQuery.data ?? []).map((account) => ({
     label: `${account.nameEn} (${account.currency})`,
@@ -149,9 +161,14 @@ export function LedgerPage({ token, bookId }: Props) {
 
   return (
     <section className="page-panel">
-      <Title order={2}>{t('ledgerTitle')}</Title>
+      <div className="page-titlebar">
+        <div>
+          <Title order={2}>{t('ledgerTitle')}</Title>
+          <p>{t('transactionsTitle')}</p>
+        </div>
+      </div>
       <div className="split-grid">
-        <Card shadow="sm" radius="md">
+        <Card shadow="sm" radius="md" className="surface-card">
           <form onSubmit={handleSubmit} className="form-grid">
             <Text fw={600}>{selectedTransaction ? t('editTransaction') : t('createTransaction')}</Text>
             <Select label={t('typeLabel')} data={transactionTypeOptions} value={type} onChange={(value) => setType(value ?? String(TransactionType.Expense))} />
@@ -190,18 +207,32 @@ export function LedgerPage({ token, bookId }: Props) {
           </form>
         </Card>
 
-        <Card shadow="sm" radius="md">
+        <Card shadow="sm" radius="md" className="surface-card">
           <Text fw={600}>{t('transactionsTitle')}</Text>
-          <Stack gap="xs" mt="sm">
-            {transactionsQuery.data?.map((item) => (
-              <Group key={item.id} justify="space-between">
-                <Text>
-                  {item.dateUtc.slice(0, 10)} | {getTransactionTypeLabel(item.type)} | {item.currency} {item.amount}
-                </Text>
-                <Button size="xs" variant="light" onClick={() => startEdit(item)}>
-                  {t('editButton')}
-                </Button>
-              </Group>
+          <Text className="section-hint">{t('summaryCurrencyHint')}</Text>
+          <Stack gap="xs" mt="sm" className="rows-stack">
+            {Object.entries(groupedTransactions).map(([date, items]) => (
+              <div key={date} className="ledger-day-group">
+                <div className="ledger-day-header">{date}</div>
+                {items.map((item) => (
+                  <div key={item.id} className="list-row">
+                    <div className="list-row-main">
+                      <span className="list-row-title">{getTransactionTypeLabel(item.type)}</span>
+                      <span className="list-row-meta">
+                        {item.currency} {item.amount.toFixed(2)}
+                      </span>
+                    </div>
+                    <Group gap="xs">
+                      <Text className={item.type === TransactionType.Income ? 'amount-positive' : 'amount-negative'}>
+                        {item.currency} {item.amount.toFixed(2)}
+                      </Text>
+                      <Button size="xs" variant="light" onClick={() => startEdit(item)}>
+                        {t('editButton')}
+                      </Button>
+                    </Group>
+                  </div>
+                ))}
+              </div>
             ))}
             {!transactionsQuery.data?.length && <Text c="dimmed">{t('noTransactions')}</Text>}
           </Stack>

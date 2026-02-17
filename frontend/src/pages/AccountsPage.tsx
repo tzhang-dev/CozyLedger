@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Card, Checkbox, Group, Select, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Button, Card, Checkbox, Select, Stack, Text, TextInput, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 import {
   createAccount,
@@ -151,10 +151,15 @@ export function AccountsPage({ token, bookId }: Props) {
 
   return (
     <section className="page-panel">
-      <Title order={2}>{t('accountsTitle')}</Title>
+      <div className="page-titlebar">
+        <div>
+          <Title order={2}>{t('accountsTitle')}</Title>
+          <p>{t('createAccount')}</p>
+        </div>
+      </div>
 
       <div className="split-grid">
-        <Card shadow="sm" radius="md">
+        <Card shadow="sm" radius="md" className="surface-card">
           <form onSubmit={handleAccountSubmit} className="form-grid">
             <Text fw={600}>{selectedAccount ? t('editAccount') : t('createAccount')}</Text>
             <TextInput value={accountName} onChange={(e) => setAccountName(e.currentTarget.value)} label={t('nameLabel')} required />
@@ -170,21 +175,22 @@ export function AccountsPage({ token, bookId }: Props) {
               {selectedAccount ? t('saveAccount') : t('addAccount')}
             </Button>
           </form>
-          <Stack gap="xs" mt="md">
+          <Stack gap="xs" mt="md" className="rows-stack">
             {accountsQuery.data?.map((account) => (
-              <Group key={account.id} justify="space-between">
-                <Text>
-                  {account.nameEn} ({account.currency})
-                </Text>
+              <div key={account.id} className="list-row">
+                <div className="list-row-main">
+                  <span className="list-row-title">{account.nameEn}</span>
+                  <span className="list-row-meta">{account.currency}</span>
+                </div>
                 <Button variant="light" size="xs" onClick={() => startAccountEdit(account)}>
                   {t('editButton')}
                 </Button>
-              </Group>
+              </div>
             ))}
           </Stack>
         </Card>
 
-        <Card shadow="sm" radius="md">
+        <Card shadow="sm" radius="md" className="surface-card">
           <form onSubmit={handleCategorySubmit} className="form-grid">
             <Text fw={600}>{selectedCategory ? t('editCategory') : t('createCategory')}</Text>
             <TextInput value={categoryName} onChange={(e) => setCategoryName(e.currentTarget.value)} label={t('nameLabel')} required />
@@ -199,16 +205,17 @@ export function AccountsPage({ token, bookId }: Props) {
               {selectedCategory ? t('saveCategory') : t('addCategory')}
             </Button>
           </form>
-          <Stack gap="xs" mt="md">
+          <Stack gap="xs" mt="md" className="rows-stack">
             {categoriesQuery.data?.map((category) => (
-              <Group key={category.id} justify="space-between">
-                <Text>
-                  {category.nameEn} ({getCategoryTypeLabel(category.type)})
-                </Text>
+              <div key={category.id} className="list-row">
+                <div className="list-row-main">
+                  <span className="list-row-title">{category.nameEn}</span>
+                  <span className="list-row-meta">{getCategoryTypeLabel(category.type)}</span>
+                </div>
                 <Button variant="light" size="xs" onClick={() => startCategoryEdit(category)}>
                   {t('editButton')}
                 </Button>
-              </Group>
+              </div>
             ))}
           </Stack>
         </Card>

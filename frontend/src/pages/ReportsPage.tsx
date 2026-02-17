@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useViewportSize } from '@mantine/hooks'
-import { Bar, BarChart, CartesianGrid, Cell, Legend, Pie, PieChart, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, Tooltip, XAxis, YAxis } from 'recharts'
 import { Card, Group, NumberInput, Select, Stack, Text, Title } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 import { getCategoryDistribution, getMonthlySummary } from '../lib/cozyApi'
@@ -13,6 +13,14 @@ type Props = {
 }
 
 const categoryColors = ['#D16F2F', '#65A38D', '#50709A', '#CC8B65', '#7B6EA3', '#5A8B4B']
+const darkChartLabel = '#9aa3b7'
+const darkChartGrid = 'rgba(255,255,255,0.12)'
+const tooltipStyle = {
+  backgroundColor: '#161d2d',
+  border: '1px solid rgba(255,255,255,0.12)',
+  borderRadius: '12px',
+  color: '#f2f5fe'
+}
 
 /**
  * Renders chart-based monthly summary and category distribution for the active book.
@@ -72,10 +80,19 @@ export function ReportsPage({ token, bookId }: Props) {
       ? Math.max(280, Math.floor((viewportWidth - 190) / 2))
       : Math.max(280, Math.floor(viewportWidth - 120))
   const chartHeight = 320
+  const topDistribution = useMemo(() => categoryChartData.slice().sort((a, b) => b.value - a.value).slice(0, 5), [categoryChartData])
+  const maxDistribution = Math.max(...topDistribution.map((item) => item.value), 1)
 
   return (
     <section className="page-panel">
-      <Title order={2}>{t('reportsTitle')}</Title>
+      <div className="page-titlebar">
+        <div>
+          <Title order={2}>{t('reportsTitle')}</Title>
+          <p>
+            {year}-{String(month).padStart(2, '0')}
+          </p>
+        </div>
+      </div>
       <Group>
         <NumberInput label={t('yearLabel')} value={year} onChange={(value) => setYear(Number(value || now.getUTCFullYear()))} />
         <NumberInput label={t('monthLabel')} value={month} min={1} max={12} onChange={(value) => setMonth(Number(value || 1))} />
@@ -87,18 +104,17 @@ export function ReportsPage({ token, bookId }: Props) {
         />
       </Group>
 
-      <Card shadow="sm" radius="md">
+      <Card shadow="sm" radius="md" className="surface-card hero-card">
         <Text fw={600}>{t('summaryTitle')} ({baseCurrency})</Text>
         <Text c="dimmed" size="sm">
           {t('summaryCurrencyHint')}
         </Text>
         <div className="chart-box">
           <BarChart width={summaryChartWidth} height={chartHeight} data={summaryChartData}>
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis dataKey="name" />
-            <YAxis />
-            <Tooltip formatter={formatCurrencyValue} />
-            <Legend />
+            <CartesianGrid strokeDasharray="2 6" stroke={darkChartGrid} />
+            <XAxis dataKey="name" tick={{ fill: darkChartLabel, fontSize: 12 }} axisLine={{ stroke: darkChartGrid }} tickLine={false} />
+            <YAxis tick={{ fill: darkChartLabel, fontSize: 12 }} axisLine={{ stroke: darkChartGrid }} tickLine={false} />
+            <Tooltip formatter={formatCurrencyValue} contentStyle={tooltipStyle} />
             <Bar dataKey="value" name={`${t('amountWithCurrency')} (${baseCurrency})`}>
               {summaryChartData.map((entry, index) => (
                 <Cell key={`${entry.name}-${index}`} fill={categoryColors[index % categoryColors.length]} />
@@ -108,7 +124,7 @@ export function ReportsPage({ token, bookId }: Props) {
         </div>
       </Card>
 
-      <Card shadow="sm" radius="md">
+      <Card shadow="sm" radius="md" className="surface-card">
         <Text fw={600}>{t('categoryDistributionTitle')} ({baseCurrency})</Text>
         <Text c="dimmed" size="sm">
           {t('categoryDistributionHint')}
@@ -122,25 +138,42 @@ export function ReportsPage({ token, bookId }: Props) {
                 nameKey="name"
                 outerRadius={Math.max(80, Math.min(splitChartWidth, chartHeight) * 0.3)}
                 label
+                labelLine={false}
               >
                 {categoryChartData.map((entry, index) => (
                   <Cell key={`${entry.name}-${index}`} fill={categoryColors[index % categoryColors.length]} />
                 ))}
               </Pie>
-              <Tooltip formatter={formatCurrencyValue} />
+              <Tooltip formatter={formatCurrencyValue} contentStyle={tooltipStyle} />
             </PieChart>
           </div>
 
           <div className="chart-box">
             <BarChart width={splitChartWidth} height={chartHeight} data={categoryChartData} layout="vertical" margin={{ left: 16, right: 16 }}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis dataKey="name" type="category" width={120} />
-              <Tooltip formatter={formatCurrencyValue} />
-              <Bar dataKey="value" name={`${t('amountWithCurrency')} (${baseCurrency})`} fill="#65A38D" />
+              <CartesianGrid strokeDasharray="2 6" stroke={darkChartGrid} />
+              <XAxis type="number" tick={{ fill: darkChartLabel, fontSize: 12 }} axisLine={{ stroke: darkChartGrid }} tickLine={false} />
+              <YAxis dataKey="name" type="category" width={120} tick={{ fill: darkChartLabel, fontSize: 12 }} axisLine={{ stroke: darkChartGrid }} tickLine={false} />
+              <Tooltip formatter={formatCurrencyValue} contentStyle={tooltipStyle} />
+              <Bar dataKey="value" name={`${t('amountWithCurrency')} (${baseCurrency})`} fill="#2fc4db" />
             </BarChart>
           </div>
         </div>
+        {!!topDistribution.length && (
+          <div className="rows-stack">
+            {topDistribution.map((item) => (
+              <div key={item.name} className="list-row">
+                <div className="list-row-main">
+                  <span className="list-row-title">{item.name}</span>
+                  <span className="list-row-meta">{((item.value / maxDistribution) * 100).toFixed(1)}%</span>
+                  <div className="bar-track">
+                    <div className="bar-fill" style={{ width: `${(item.value / maxDistribution) * 100}%` }} />
+                  </div>
+                </div>
+                <span className="amount-positive">{baseCurrency} {item.value.toFixed(2)}</span>
+              </div>
+            ))}
+          </div>
+        )}
 
         {!categoryChartData.length && (
           <Stack gap="xs" mt="sm">

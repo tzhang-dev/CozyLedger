@@ -43,22 +43,37 @@ export function MembersPage({ token, bookId, onBookJoined }: Props) {
 
   return (
     <section className="page-panel">
-      <Title order={2}>{t('membersTitle')}</Title>
+      <div className="page-titlebar">
+        <div>
+          <Title order={2}>{t('membersTitle')}</Title>
+          <p>{t('generateInvite')}</p>
+        </div>
+      </div>
       <div className="split-grid">
-        <Card shadow="sm" radius="md" className="form-grid">
+        <Card shadow="sm" radius="md" className="surface-card form-grid">
           <Text fw={600}>{t('generateInvite')}</Text>
           <Button onClick={() => createInviteMutation.mutate()} loading={createInviteMutation.isPending}>
             {t('createInviteLink')}
           </Button>
           {createInviteMutation.data && (
-            <>
-              <Text size="sm">{t('inviteTokenLabel')}: {createInviteMutation.data.token}</Text>
-              <Text size="sm">{t('inviteUrlLabel')}: {createInviteMutation.data.inviteUrl}</Text>
-            </>
+            <div className="rows-stack">
+              <div className="list-row">
+                <div className="list-row-main">
+                  <span className="list-row-title">{t('inviteTokenLabel')}</span>
+                  <span className="list-row-meta">{createInviteMutation.data.token}</span>
+                </div>
+              </div>
+              <div className="list-row">
+                <div className="list-row-main">
+                  <span className="list-row-title">{t('inviteUrlLabel')}</span>
+                  <span className="list-row-meta">{createInviteMutation.data.inviteUrl}</span>
+                </div>
+              </div>
+            </div>
           )}
         </Card>
 
-        <Card shadow="sm" radius="md">
+        <Card shadow="sm" radius="md" className="surface-card">
           <form onSubmit={handleAccept} className="form-grid">
             <Text fw={600}>{t('acceptInvite')}</Text>
             <TextInput value={inviteToken} onChange={(event) => setInviteToken(event.currentTarget.value)} label={t('inviteTokenInput')} required />
