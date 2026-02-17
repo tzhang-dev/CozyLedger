@@ -6,10 +6,13 @@ const resources = {
     translation: {
       appTitle: 'CozyLedger',
       languageLabel: 'Language',
+      navTransactions: 'Transactions',
       navDashboard: 'Dashboard',
       navLedger: 'Ledger',
       navReports: 'Reports',
+      navNewTransaction: 'New',
       navAccounts: 'Accounts',
+      navSettings: 'Settings',
       navMembers: 'Members',
       signOut: 'Sign out',
 
@@ -98,10 +101,13 @@ const resources = {
     translation: {
       appTitle: '温馨账本',
       languageLabel: '语言',
+      navTransactions: '流水',
       navDashboard: '仪表盘',
       navLedger: '流水',
       navReports: '报表',
+      navNewTransaction: '记一笔',
       navAccounts: '账户',
+      navSettings: '设置',
       navMembers: '成员',
       signOut: '退出登录',
 

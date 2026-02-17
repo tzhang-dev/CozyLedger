@@ -5,7 +5,7 @@ import { useMutation } from '@tanstack/react-query'
 import { ActionIcon, Button, Card, Group, PasswordInput, Text, TextInput } from '@mantine/core'
 import { IconLanguage } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
-import { createBook, login, register } from './lib/cozyApi'
+import { createBook, listBooks, login, register } from './lib/cozyApi'
 import { clearSession, loadSession, saveSession } from './lib/session'
 import type { SessionState } from './lib/session'
 import { AccountsPage } from './pages/AccountsPage'
@@ -18,6 +18,8 @@ import './App.css'
 type NavItem = {
   to: string
   label: string
+  className?: string
+  end?: boolean
 }
 
 function LanguageSwitch() {
@@ -49,34 +51,26 @@ function LanguageSwitch() {
 
 function Navigation({ items }: { items: NavItem[] }) {
   return (
-    <>
-      <nav className="desktop-nav">
-        {items.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            className={({ isActive }) =>
-              isActive ? 'nav-link nav-link-active' : 'nav-link'
-            }
-          >
-            {item.label}
-          </NavLink>
-        ))}
-      </nav>
-      <nav className="mobile-nav">
-        {items.map((item) => (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            className={({ isActive }) =>
-              isActive ? 'mobile-nav-link mobile-nav-link-active' : 'mobile-nav-link'
-            }
-          >
-            {item.label}
-          </NavLink>
-        ))}
-      </nav>
-    </>
+    <nav className="bottom-nav">
+      {items.map((item) => (
+        <NavLink
+          key={`${item.to}-${item.label}`}
+          to={item.to}
+          end={item.end}
+          className={({ isActive }) =>
+            [
+              'bottom-nav-link',
+              item.className ?? '',
+              isActive ? 'bottom-nav-link-active' : ''
+            ]
+              .filter(Boolean)
+              .join(' ')
+          }
+        >
+          {item.label}
+        </NavLink>
+      ))}
+    </nav>
   )
 }
 
@@ -93,9 +87,31 @@ function SetupPanel({ onReady }: { onReady: (session: SessionState) => void }) {
     onSuccess: (result) => setToken(result.token)
   })
 
+  /**
+   * Loads an existing book and enters the app immediately when available.
+   */
+  const tryEnterExistingBook = async (userToken: string) => {
+    try {
+      const books = await listBooks(userToken)
+      const firstBook = books[0]
+      if (!firstBook) {
+        return
+      }
+
+      const session = { token: userToken, bookId: firstBook.id }
+      saveSession(session)
+      onReady(session)
+    } catch {
+      // Keep setup screen usable even when book lookup fails.
+    }
+  }
+
   const loginMutation = useMutation({
     mutationFn: () => login(email, password),
-    onSuccess: (result) => setToken(result.token)
+    onSuccess: async (result) => {
+      setToken(result.token)
+      await tryEnterExistingBook(result.token)
+    }
   })
 
   const createBookMutation = useMutation({
@@ -170,11 +186,11 @@ function App() {
 
   const navItems: NavItem[] = useMemo(
     () => [
-      { to: '/dashboard', label: t('navDashboard') },
-      { to: '/ledger', label: t('navLedger') },
+      { to: '/ledger', label: t('navTransactions'), end: true },
       { to: '/reports', label: t('navReports') },
+      { to: '/ledger/new', label: t('navNewTransaction'), className: 'bottom-nav-link-center' },
       { to: '/accounts', label: t('navAccounts') },
-      { to: '/members', label: t('navMembers') }
+      { to: '/settings', label: t('navSettings') }
     ],
     [t]
   )
@@ -201,21 +217,26 @@ function App() {
         </Group>
       </header>
 
-      <Navigation items={navItems} />
-
       <main className="app-main">
         <Routes>
           <Route path="/dashboard" element={<DashboardPage token={session.token} bookId={session.bookId} />} />
-          <Route path="/ledger" element={<LedgerPage token={session.token} bookId={session.bookId} />} />
+          <Route path="/ledger" element={<LedgerPage token={session.token} bookId={session.bookId} mode="list" />} />
+          <Route path="/ledger/new" element={<LedgerPage token={session.token} bookId={session.bookId} mode="new" />} />
           <Route path="/reports" element={<ReportsPage token={session.token} bookId={session.bookId} />} />
           <Route path="/accounts" element={<AccountsPage token={session.token} bookId={session.bookId} />} />
           <Route
             path="/members"
             element={<MembersPage token={session.token} bookId={session.bookId} onBookJoined={(bookId) => setSession({ ...session, bookId })} />}
           />
-          <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          <Route
+            path="/settings"
+            element={<MembersPage token={session.token} bookId={session.bookId} onBookJoined={(bookId) => setSession({ ...session, bookId })} />}
+          />
+          <Route path="*" element={<Navigate to="/ledger" replace />} />
         </Routes>
       </main>
+
+      <Navigation items={navItems} />
     </div>
   )
 }

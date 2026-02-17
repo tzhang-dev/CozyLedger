@@ -20,9 +20,41 @@ public static class BookEndpoints
     {
         var group = app.MapGroup("/books").RequireAuthorization();
 
+        group.MapGet("/", ListBooksAsync);
         group.MapPost("/", CreateBookAsync);
 
         return app;
+    }
+
+    /// <summary>
+    /// Lists books the authenticated user is a member of.
+    /// </summary>
+    /// <param name="user">Authenticated user principal.</param>
+    /// <param name="dbContext">Database context.</param>
+    /// <returns>HTTP result containing visible books for the current user.</returns>
+    private static async Task<IResult> ListBooksAsync(
+        ClaimsPrincipal user,
+        AppDbContext dbContext)
+    {
+        var userId = user.GetUserId();
+        var books = await dbContext.Memberships
+            .AsNoTracking()
+            .Where(m => m.UserId == userId)
+            .Join(
+                dbContext.Books.AsNoTracking(),
+                membership => membership.BookId,
+                book => book.Id,
+                (_, book) => new
+                {
+                    book.Id,
+                    book.Name,
+                    book.BaseCurrency
+                })
+            .OrderBy(book => book.Name)
+            .Select(book => new BookResponse(book.Id, book.Name, book.BaseCurrency))
+            .ToListAsync();
+
+        return Results.Ok(books);
     }
 
     /// <summary>

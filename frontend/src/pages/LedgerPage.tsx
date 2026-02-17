@@ -10,12 +10,13 @@ import type { TransactionResponse } from '../lib/types'
 type Props = {
   token: string
   bookId: string
+  mode?: 'list' | 'new'
 }
 
 /**
  * Manages transaction create/update flows and renders the ledger list.
  */
-export function LedgerPage({ token, bookId }: Props) {
+export function LedgerPage({ token, bookId, mode = 'list' }: Props) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
   const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null)
@@ -158,6 +159,7 @@ export function LedgerPage({ token, bookId }: Props) {
         return 'Unknown'
     }
   }
+  const isListMode = mode === 'list'
 
   return (
     <section className="page-panel">
@@ -167,45 +169,47 @@ export function LedgerPage({ token, bookId }: Props) {
           <p>{t('transactionsTitle')}</p>
         </div>
       </div>
-      <div className="split-grid">
-        <Card shadow="sm" radius="md" className="surface-card">
-          <form onSubmit={handleSubmit} className="form-grid">
-            <Text fw={600}>{selectedTransaction ? t('editTransaction') : t('createTransaction')}</Text>
-            <Select label={t('typeLabel')} data={transactionTypeOptions} value={type} onChange={(value) => setType(value ?? String(TransactionType.Expense))} />
-            <TextInput label={t('dateUtcLabel')} value={dateUtc} onChange={(event) => setDateUtc(event.currentTarget.value)} required />
-            <NumberInput label={t('amountLabel')} value={amount} onChange={(value) => setAmount(Number(value ?? 0))} required />
-            <TextInput label={t('currencyLabel')} value={currency} onChange={(event) => setCurrency(event.currentTarget.value.toUpperCase())} maxLength={3} required />
-            <Select label={t('accountLabel')} data={accountOptions} value={accountId} onChange={setAccountId} searchable required />
-            <Select
-              label={t('destinationAccountLabel')}
-              data={accountOptions}
-              value={toAccountId}
-              onChange={setToAccountId}
-              disabled={!isTransfer}
-              clearable
-            />
-            <Select
-              label={t('categoryLabel')}
-              data={categoryOptions}
-              value={categoryId}
-              onChange={setCategoryId}
-              disabled={!needsCategory}
-              clearable
-            />
-            <TextInput label={t('noteLabel')} value={note} onChange={(event) => setNote(event.currentTarget.value)} />
-            <Switch label={t('refundLabel')} checked={isRefund} onChange={(event) => setIsRefund(event.currentTarget.checked)} disabled={Number(type) !== TransactionType.Expense} />
-            <Group>
-              <Button type="submit" loading={upsertTransaction.isPending}>
-                {selectedTransaction ? t('saveTransaction') : t('addTransaction')}
-              </Button>
-              {selectedTransaction && (
-                <Button variant="default" type="button" onClick={resetForm}>
-                  {t('cancelEdit')}
+      <div className={isListMode ? 'page-panel' : 'split-grid'}>
+        {!isListMode && (
+          <Card shadow="sm" radius="md" className="surface-card">
+            <form onSubmit={handleSubmit} className="form-grid">
+              <Text fw={600}>{selectedTransaction ? t('editTransaction') : t('createTransaction')}</Text>
+              <Select label={t('typeLabel')} data={transactionTypeOptions} value={type} onChange={(value) => setType(value ?? String(TransactionType.Expense))} />
+              <TextInput label={t('dateUtcLabel')} value={dateUtc} onChange={(event) => setDateUtc(event.currentTarget.value)} required />
+              <NumberInput label={t('amountLabel')} value={amount} onChange={(value) => setAmount(Number(value ?? 0))} required />
+              <TextInput label={t('currencyLabel')} value={currency} onChange={(event) => setCurrency(event.currentTarget.value.toUpperCase())} maxLength={3} required />
+              <Select label={t('accountLabel')} data={accountOptions} value={accountId} onChange={setAccountId} searchable required />
+              <Select
+                label={t('destinationAccountLabel')}
+                data={accountOptions}
+                value={toAccountId}
+                onChange={setToAccountId}
+                disabled={!isTransfer}
+                clearable
+              />
+              <Select
+                label={t('categoryLabel')}
+                data={categoryOptions}
+                value={categoryId}
+                onChange={setCategoryId}
+                disabled={!needsCategory}
+                clearable
+              />
+              <TextInput label={t('noteLabel')} value={note} onChange={(event) => setNote(event.currentTarget.value)} />
+              <Switch label={t('refundLabel')} checked={isRefund} onChange={(event) => setIsRefund(event.currentTarget.checked)} disabled={Number(type) !== TransactionType.Expense} />
+              <Group>
+                <Button type="submit" loading={upsertTransaction.isPending}>
+                  {selectedTransaction ? t('saveTransaction') : t('addTransaction')}
                 </Button>
-              )}
-            </Group>
-          </form>
-        </Card>
+                {selectedTransaction && (
+                  <Button variant="default" type="button" onClick={resetForm}>
+                    {t('cancelEdit')}
+                  </Button>
+                )}
+              </Group>
+            </form>
+          </Card>
+        )}
 
         <Card shadow="sm" radius="md" className="surface-card">
           <Text fw={600}>{t('transactionsTitle')}</Text>
@@ -226,9 +230,11 @@ export function LedgerPage({ token, bookId }: Props) {
                       <Text className={item.type === TransactionType.Income ? 'amount-positive' : 'amount-negative'}>
                         {item.currency} {item.amount.toFixed(2)}
                       </Text>
-                      <Button size="xs" variant="light" onClick={() => startEdit(item)}>
-                        {t('editButton')}
-                      </Button>
+                      {!isListMode && (
+                        <Button size="xs" variant="light" onClick={() => startEdit(item)}>
+                          {t('editButton')}
+                        </Button>
+                      )}
                     </Group>
                   </div>
                 ))}

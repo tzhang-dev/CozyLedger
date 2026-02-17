@@ -55,6 +55,34 @@ public class AuthFlowTests : IClassFixture<PostgresContainerFixture>
     }
 
     /// <summary>
+    /// Verifies that the authenticated user can list books they belong to.
+    /// </summary>
+    /// <returns>A task that completes when assertions are validated.</returns>
+    [Fact]
+    public async Task Authenticated_user_can_list_books()
+    {
+        await using var factory = new TestWebApplicationFactory(_fixture.ConnectionString);
+        await EnsureDatabaseAsync(factory);
+
+        using var client = factory.CreateClient();
+        var ownerToken = await RegisterAndGetToken(client, "owner-books@cozy.local");
+        client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", ownerToken);
+
+        var createResponse = await client.PostAsJsonAsync("/books", new CreateBookRequest(
+            "Primary Household",
+            "USD"));
+        createResponse.IsSuccessStatusCode.Should().BeTrue();
+        var createdBook = await createResponse.Content.ReadFromJsonAsync<BookResponse>();
+        createdBook.Should().NotBeNull();
+
+        var listResponse = await client.GetAsync("/books");
+        listResponse.IsSuccessStatusCode.Should().BeTrue();
+        var books = await listResponse.Content.ReadFromJsonAsync<List<BookResponse>>();
+        books.Should().NotBeNull();
+        books!.Should().ContainSingle(book => book.Id == createdBook!.Id);
+    }
+
+    /// <summary>
     /// Verifies invite creation and acceptance flow, including invalid token handling.
     /// </summary>
     /// <returns>A task that completes when assertions are validated.</returns>

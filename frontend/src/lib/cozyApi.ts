@@ -76,6 +76,13 @@ export function login(email: string, password: string): Promise<AuthResponse> {
 }
 
 /**
+ * Lists books for the authenticated user.
+ */
+export function listBooks(token: string): Promise<BookResponse[]> {
+  return requestJson<BookResponse[]>('/books', {}, token)
+}
+
+/**
  * Creates a new book for the authenticated user.
  */
 export function createBook(token: string, name: string, baseCurrency: string): Promise<BookResponse> {
