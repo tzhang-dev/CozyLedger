@@ -1,13 +1,25 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 
+const LANGUAGE_STORAGE_KEY = 'cozyledger.locale'
+
+function resolveInitialLanguage(): 'en' | 'zh' {
+  const storedLanguage = (globalThis.localStorage?.getItem(LANGUAGE_STORAGE_KEY) ?? '').toLowerCase()
+  if (storedLanguage === 'zh' || storedLanguage === 'en') {
+    return storedLanguage
+  }
+
+  const browserLanguage = (globalThis.navigator?.language ?? 'en').toLowerCase()
+  return browserLanguage.startsWith('zh') ? 'zh' : 'en'
+}
+
 const resources = {
   en: {
     translation: {
       appTitle: 'CozyLedger',
       languageLabel: 'Language',
       navTransactions: 'Transactions',
-      navDashboard: 'Dashboard',
+      navDashboard: 'Home',
       navLedger: 'Ledger',
       navReports: 'Reports',
       navNewTransaction: 'New',
@@ -38,11 +50,24 @@ const resources = {
       createBookButton: 'Create book',
 
       dashboardTitle: 'Household Snapshot',
+      homeGreeting: 'Good morning,',
+      homeUserName: 'Alex Johnson',
+      homeNotificationAria: 'Notifications',
+      homeTotalBalance: 'Total Balance',
+      homeThisMonth: 'This month',
+      homeAddIncome: 'Add Income',
+      homeAddExpense: 'Add Expense',
+      homeActionReports: 'Reports',
+      homeTopExpenseCategories: 'Top Expense Categories',
+      homeCurrentMonthDistribution: 'Current month distribution',
+      homeRecentTransactions: 'Recent Transactions',
+      homeFallbackTransaction: 'Transaction',
       summaryIncome: 'Income',
       summaryExpense: 'Expense',
       summaryNet: 'Net',
       topExpenseCategoriesMonth: 'Top Expense Categories (This Month)',
       noDataYet: 'No data yet.',
+      noCategories: 'No categories yet.',
 
       accountsTitle: 'Accounts',
       editAccount: 'Edit account',
@@ -68,6 +93,11 @@ const resources = {
       typeExpense: 'Expense',
 
       ledgerTitle: 'Ledger',
+      ledgerListTitle: 'Transactions',
+      ledgerNewTitle: 'Add Transaction',
+      ledgerFilterAll: 'All',
+      ledgerSearchPlaceholder: 'Search transactions...',
+      ledgerNoResults: 'No transactions found.',
       editTransaction: 'Edit transaction',
       createTransaction: 'Create transaction',
       dateUtcLabel: 'Date (UTC)',
@@ -87,6 +117,9 @@ const resources = {
       typeLiabilityAdjustment: 'Liability Adjustment',
 
       membersTitle: 'Members & Invites',
+      membersSubtitle: 'Share access with collaborators',
+      membersGenerateTitle: 'Generate Invite',
+      membersAcceptTitle: 'Accept Invite',
       generateInvite: 'Generate invite',
       createInviteLink: 'Create invite link',
       inviteTokenLabel: 'Token',
@@ -96,6 +129,12 @@ const resources = {
       joinBook: 'Join book',
 
       reportsTitle: 'Reports',
+      reportsTabOverview: 'Overview',
+      reportsTabCategories: 'Categories',
+      reportsSaved: 'Saved',
+      reportsIncomeVsExpense: 'Income vs Expense',
+      reportsMonthlyTotalsIn: 'Monthly totals in {{currency}}',
+      reportsBreakdownTitle: 'Breakdown',
       yearLabel: 'Year',
       monthLabel: 'Month',
       categoryViewLabel: 'Category view',
@@ -107,6 +146,7 @@ const resources = {
       amountWithCurrency: 'Amount',
 
       accountsHint: 'Select an account to view details and manage actions.',
+      accountsManageSubtitle: 'Manage all household money sources',
       accountActionsMenu: 'Account actions',
       accountDetailsTitle: 'Account details',
       accountNoSelection: 'No account selected.',
@@ -114,7 +154,13 @@ const resources = {
       noAccounts: 'No accounts yet.',
       deleteAccount: 'Delete account',
       deleteAccountConfirm: 'Delete account "{{name}}"?',
-      deleteAccountBlocked: 'Cannot delete this account because transactions reference it.'
+      deleteAccountBlocked: 'Cannot delete this account because transactions reference it.',
+      settingsAccountsHint: 'Manage your account list',
+      settingsMembersHint: 'Invite and join books',
+      settingsCategoriesHint: 'Create and update categories',
+      settingsQuickLanguageToggle: 'Quick Language Toggle',
+      settingsQuickLanguageHint: 'Switch between EN and 中文',
+      categoriesSubtitle: 'Create and edit category definitions'
     }
   },
   zh: {
@@ -122,7 +168,7 @@ const resources = {
       appTitle: '温馨账本',
       languageLabel: '语言',
       navTransactions: '流水',
-      navDashboard: '仪表盘',
+      navDashboard: '首页',
       navLedger: '流水',
       navReports: '报表',
       navNewTransaction: '记一笔',
@@ -153,11 +199,24 @@ const resources = {
       createBookButton: '创建账本',
 
       dashboardTitle: '家庭概览',
+      homeGreeting: '早上好，',
+      homeUserName: 'Alex Johnson',
+      homeNotificationAria: '通知',
+      homeTotalBalance: '总余额',
+      homeThisMonth: '本月',
+      homeAddIncome: '记收入',
+      homeAddExpense: '记支出',
+      homeActionReports: '报表',
+      homeTopExpenseCategories: '支出分类排行',
+      homeCurrentMonthDistribution: '本月分布',
+      homeRecentTransactions: '最近交易',
+      homeFallbackTransaction: '交易',
       summaryIncome: '收入',
       summaryExpense: '支出',
       summaryNet: '净额',
       topExpenseCategoriesMonth: '本月支出分类排行',
       noDataYet: '暂无数据。',
+      noCategories: '暂无分类。',
 
       accountsTitle: '账户',
       editAccount: '编辑账户',
@@ -183,6 +242,11 @@ const resources = {
       typeExpense: '支出',
 
       ledgerTitle: '流水',
+      ledgerListTitle: '交易列表',
+      ledgerNewTitle: '新增交易',
+      ledgerFilterAll: '全部',
+      ledgerSearchPlaceholder: '搜索交易...',
+      ledgerNoResults: '未找到交易记录。',
       editTransaction: '编辑交易',
       createTransaction: '新建交易',
       dateUtcLabel: '日期 (UTC)',
@@ -202,6 +266,9 @@ const resources = {
       typeLiabilityAdjustment: '负债调整',
 
       membersTitle: '成员与邀请',
+      membersSubtitle: '与协作者共享账本访问',
+      membersGenerateTitle: '生成邀请',
+      membersAcceptTitle: '接受邀请',
       generateInvite: '生成邀请',
       createInviteLink: '创建邀请链接',
       inviteTokenLabel: '令牌',
@@ -211,6 +278,12 @@ const resources = {
       joinBook: '加入账本',
 
       reportsTitle: '报表',
+      reportsTabOverview: '总览',
+      reportsTabCategories: '分类',
+      reportsSaved: '结余',
+      reportsIncomeVsExpense: '收入与支出',
+      reportsMonthlyTotalsIn: '月度总额（{{currency}}）',
+      reportsBreakdownTitle: '明细',
       yearLabel: '年份',
       monthLabel: '月份',
       categoryViewLabel: '分类视图',
@@ -222,6 +295,7 @@ const resources = {
       amountWithCurrency: '金额',
 
       accountsHint: '选择账户以查看详情并进行管理。',
+      accountsManageSubtitle: '管理所有家庭资金账户',
       accountActionsMenu: '账户操作',
       accountDetailsTitle: '账户详情',
       accountNoSelection: '未选择账户。',
@@ -229,17 +303,29 @@ const resources = {
       noAccounts: '暂无账户。',
       deleteAccount: '删除账户',
       deleteAccountConfirm: '确认删除账户“{{name}}”吗？',
-      deleteAccountBlocked: '该账户已被交易引用，无法删除。'
+      deleteAccountBlocked: '该账户已被交易引用，无法删除。',
+      settingsAccountsHint: '管理账户列表',
+      settingsMembersHint: '邀请成员并加入账本',
+      settingsCategoriesHint: '创建和更新分类',
+      settingsQuickLanguageToggle: '快速切换语言',
+      settingsQuickLanguageHint: '在中英文之间切换',
+      categoriesSubtitle: '创建和编辑分类定义'
     }
   }
 } as const
 
 void i18n.use(initReactI18next).init({
   resources,
-  lng: 'en',
+  lng: resolveInitialLanguage(),
   fallbackLng: 'en',
   interpolation: {
     escapeValue: false
+  }
+})
+
+i18n.on('languageChanged', (language) => {
+  if (language === 'en' || language === 'zh') {
+    globalThis.localStorage?.setItem(LANGUAGE_STORAGE_KEY, language)
   }
 })
 

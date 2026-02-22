@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { Button, Card, Checkbox, Select, Stack, Text, TextInput, Title } from '@mantine/core'
+import { Button, Checkbox, Group, Select, TextInput } from '@mantine/core'
 import { IconArrowLeft } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 import { createCategory, listCategories, updateCategory } from '../lib/cozyApi'
@@ -17,7 +17,7 @@ type Props = {
  * Settings sub-page for category management.
  */
 export function CategoriesSettingsPage({ token, bookId, onBack }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
   const [categoryName, setCategoryName] = useState('')
   const [categoryType, setCategoryType] = useState(String(CategoryType.Expense))
@@ -70,56 +70,62 @@ export function CategoriesSettingsPage({ token, bookId, onBack }: Props) {
     value === CategoryType.Income ? t('typeIncome') : t('typeExpense')
 
   return (
-    <section className="page-panel">
-      <div className="page-titlebar">
-        <div className="titlebar-leading">
-          <Button variant="light" leftSection={<IconArrowLeft size={16} />} onClick={onBack}>
-            {t('backButton')}
-          </Button>
-          <div>
-            <Title order={2}>{t('categoriesTitle')}</Title>
-            <p>{t('categoriesSettingsHint')}</p>
+    <section className="cl-page">
+      <header className="cl-header">
+        <div className="cl-header-inner">
+          <Group>
+            <Button variant="light" leftSection={<IconArrowLeft size={16} />} onClick={onBack}>
+              {t('backButton')}
+            </Button>
+          </Group>
+          <h1 className="cl-header-title">{t('categoriesTitle')}</h1>
+          <p className="cl-header-subtitle">{t('categoriesSubtitle')}</p>
+        </div>
+      </header>
+
+      <div className="cl-body">
+        <div className="cl-card">
+          <form onSubmit={handleCategorySubmit} className="cl-form-grid">
+            <p className="cl-card-title">{selectedCategory ? t('editCategory') : t('createCategory')}</p>
+            <TextInput value={categoryName} onChange={(event) => setCategoryName(event.currentTarget.value)} label={t('nameLabel')} required />
+            <Select
+              value={categoryType}
+              onChange={(value) => setCategoryType(value ?? String(CategoryType.Expense))}
+              data={categoryTypeOptions}
+              label={t('typeLabel')}
+            />
+            <Checkbox label={t('activeLabel')} checked readOnly />
+            <Button type="submit" loading={upsertCategory.isPending}>
+              {selectedCategory ? t('saveCategory') : t('addCategory')}
+            </Button>
+          </form>
+        </div>
+
+        <div className="cl-card">
+          <div className="cl-list">
+            {categoriesQuery.data?.map((category) => (
+              <div key={category.id} className="cl-list-row">
+                <span className="cl-list-row-main">
+                  <span className="cl-list-row-title">{i18n.language === 'zh' ? category.nameZhHans : category.nameEn}</span>
+                  <span className="cl-list-row-meta">{getCategoryTypeLabel(category.type)}</span>
+                </span>
+                <Button
+                  variant="light"
+                  size="xs"
+                  onClick={() => {
+                    setSelectedCategoryId(category.id)
+                    setCategoryName(i18n.language === 'zh' ? category.nameZhHans : category.nameEn)
+                    setCategoryType(String(category.type))
+                  }}
+                >
+                  {t('editButton')}
+                </Button>
+              </div>
+            ))}
+            {!categoriesQuery.data?.length ? <p className="cl-empty">{t('noCategories')}</p> : null}
           </div>
         </div>
       </div>
-
-      <Card shadow="sm" radius="md" className="surface-card">
-        <form onSubmit={handleCategorySubmit} className="form-grid">
-          <Text fw={600}>{selectedCategory ? t('editCategory') : t('createCategory')}</Text>
-          <TextInput value={categoryName} onChange={(event) => setCategoryName(event.currentTarget.value)} label={t('nameLabel')} required />
-          <Select
-            value={categoryType}
-            onChange={(value) => setCategoryType(value ?? String(CategoryType.Expense))}
-            data={categoryTypeOptions}
-            label={t('typeLabel')}
-          />
-          <Checkbox label={t('activeLabel')} checked readOnly />
-          <Button type="submit" loading={upsertCategory.isPending}>
-            {selectedCategory ? t('saveCategory') : t('addCategory')}
-          </Button>
-        </form>
-        <Stack gap="xs" mt="md" className="rows-stack">
-          {categoriesQuery.data?.map((category) => (
-            <div key={category.id} className="list-row">
-              <div className="list-row-main">
-                <span className="list-row-title">{category.nameEn}</span>
-                <span className="list-row-meta">{getCategoryTypeLabel(category.type)}</span>
-              </div>
-              <Button
-                variant="light"
-                size="xs"
-                onClick={() => {
-                  setSelectedCategoryId(category.id)
-                  setCategoryName(category.nameEn)
-                  setCategoryType(String(category.type))
-                }}
-              >
-                {t('editButton')}
-              </Button>
-            </div>
-          ))}
-        </Stack>
-      </Card>
     </section>
   )
 }

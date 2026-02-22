@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation } from '@tanstack/react-query'
-import { Button, Card, Group, Text, TextInput, Title } from '@mantine/core'
+import { Button, Group, TextInput } from '@mantine/core'
 import { useTranslation } from 'react-i18next'
 import { acceptInvite, createInvite } from '../lib/cozyApi'
 import { saveSession } from '../lib/session'
@@ -42,40 +42,41 @@ export function MembersPage({ token, bookId, onBookJoined }: Props) {
   }
 
   return (
-    <section className="page-panel">
-      <div className="page-titlebar">
-        <div>
-          <Title order={2}>{t('membersTitle')}</Title>
-          <p>{t('generateInvite')}</p>
+    <section className="cl-page">
+      <header className="cl-header">
+        <div className="cl-header-inner">
+          <h1 className="cl-header-title">{t('membersTitle')}</h1>
+          <p className="cl-header-subtitle">{t('membersSubtitle')}</p>
         </div>
-      </div>
-      <div className="split-grid">
-        <Card shadow="sm" radius="md" className="surface-card form-grid">
-          <Text fw={600}>{t('generateInvite')}</Text>
+      </header>
+
+      <div className="cl-body">
+        <div className="cl-card cl-form-grid">
+          <p className="cl-card-title">{t('membersGenerateTitle')}</p>
           <Button onClick={() => createInviteMutation.mutate()} loading={createInviteMutation.isPending}>
             {t('createInviteLink')}
           </Button>
-          {createInviteMutation.data && (
-            <div className="rows-stack">
-              <div className="list-row">
-                <div className="list-row-main">
-                  <span className="list-row-title">{t('inviteTokenLabel')}</span>
-                  <span className="list-row-meta">{createInviteMutation.data.token}</span>
-                </div>
+          {createInviteMutation.data ? (
+            <div className="cl-list">
+              <div className="cl-list-row">
+                <span className="cl-list-row-main">
+                  <span className="cl-list-row-title">{t('inviteTokenLabel')}</span>
+                  <span className="cl-list-row-meta">{createInviteMutation.data.token}</span>
+                </span>
               </div>
-              <div className="list-row">
-                <div className="list-row-main">
-                  <span className="list-row-title">{t('inviteUrlLabel')}</span>
-                  <span className="list-row-meta">{createInviteMutation.data.inviteUrl}</span>
-                </div>
+              <div className="cl-list-row">
+                <span className="cl-list-row-main">
+                  <span className="cl-list-row-title">{t('inviteUrlLabel')}</span>
+                  <span className="cl-list-row-meta">{createInviteMutation.data.inviteUrl}</span>
+                </span>
               </div>
             </div>
-          )}
-        </Card>
+          ) : null}
+        </div>
 
-        <Card shadow="sm" radius="md" className="surface-card">
-          <form onSubmit={handleAccept} className="form-grid">
-            <Text fw={600}>{t('acceptInvite')}</Text>
+        <div className="cl-card">
+          <form onSubmit={handleAccept} className="cl-form-grid">
+            <p className="cl-card-title">{t('membersAcceptTitle')}</p>
             <TextInput value={inviteToken} onChange={(event) => setInviteToken(event.currentTarget.value)} label={t('inviteTokenInput')} required />
             <Group>
               <Button type="submit" loading={acceptInviteMutation.isPending}>
@@ -83,7 +84,7 @@ export function MembersPage({ token, bookId, onBookJoined }: Props) {
               </Button>
             </Group>
           </form>
-        </Card>
+        </div>
       </div>
     </section>
   )

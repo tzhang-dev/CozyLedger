@@ -1,5 +1,5 @@
-import { ActionIcon, Button, Card, Group, Text, Title } from '@mantine/core'
-import { IconChevronRight, IconLanguage, IconTags } from '@tabler/icons-react'
+import { Button } from '@mantine/core'
+import { IconChevronRight, IconLanguage, IconLogout, IconTags, IconUsers, IconWallet } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 
@@ -15,44 +15,64 @@ export function SettingsPage({ onSignOut }: Props) {
   const navigate = useNavigate()
 
   return (
-    <section className="page-panel">
-      <div className="page-titlebar">
-        <div>
-          <Title order={2}>{t('settingsTitle')}</Title>
-          <p>{t('settingsHint')}</p>
+    <section className="cl-page">
+      <header className="cl-header">
+        <div className="cl-header-inner">
+          <h1 className="cl-header-title">{t('settingsTitle')}</h1>
+          <p className="cl-header-subtitle">{t('settingsHint')}</p>
         </div>
-      </div>
-      <div className="split-grid">
-        <Card shadow="sm" radius="md" className="surface-card form-grid">
-          <Text fw={600}>{t('languageLabel')}</Text>
-          <Group gap="xs">
-            <IconLanguage size={18} />
-            <ActionIcon
-              variant={i18n.language === 'en' ? 'filled' : 'light'}
-              onClick={() => void i18n.changeLanguage('en')}
-              aria-label="Switch to English"
-            >
+      </header>
+
+      <div className="cl-body">
+        <div className="cl-card cl-form-grid">
+          <p className="cl-card-title">{t('languageLabel')}</p>
+          <div className="cl-filter-row">
+            <button type="button" className={`cl-chip ${i18n.language === 'en' ? 'cl-chip-active' : ''}`} onClick={() => void i18n.changeLanguage('en')}>
               EN
-            </ActionIcon>
-            <ActionIcon
-              variant={i18n.language === 'zh' ? 'filled' : 'light'}
-              onClick={() => void i18n.changeLanguage('zh')}
-              aria-label="切换到中文"
-            >
-              中
-            </ActionIcon>
-          </Group>
-        </Card>
-        <Card shadow="sm" radius="md" className="surface-card form-grid">
-          <Text fw={600}>{t('categoriesTitle')}</Text>
-          <Button variant="light" leftSection={<IconTags size={16} />} rightSection={<IconChevronRight size={14} />} onClick={() => navigate('/settings/categories')}>
-            {t('manageCategories')}
+            </button>
+            <button type="button" className={`cl-chip ${i18n.language === 'zh' ? 'cl-chip-active' : ''}`} onClick={() => void i18n.changeLanguage('zh')}>
+              中文
+            </button>
+          </div>
+        </div>
+
+        <div className="cl-card cl-settings-list-card">
+          <button type="button" className="cl-list-row cl-settings-row" onClick={() => navigate('/accounts')}>
+            <span className="cl-list-row-main">
+              <span className="cl-list-row-title cl-settings-row-title"><IconWallet size={15} /> {t('accountsTitle')}</span>
+              <span className="cl-list-row-meta">{t('settingsAccountsHint')}</span>
+            </span>
+            <IconChevronRight size={14} className="cl-settings-row-arrow" />
+          </button>
+          <button type="button" className="cl-list-row cl-settings-row" onClick={() => navigate('/members')}>
+            <span className="cl-list-row-main">
+              <span className="cl-list-row-title cl-settings-row-title"><IconUsers size={15} /> {t('navMembers')}</span>
+              <span className="cl-list-row-meta">{t('settingsMembersHint')}</span>
+            </span>
+            <IconChevronRight size={14} className="cl-settings-row-arrow" />
+          </button>
+          <button type="button" className="cl-list-row cl-settings-row" onClick={() => navigate('/settings/categories')}>
+            <span className="cl-list-row-main">
+              <span className="cl-list-row-title cl-settings-row-title"><IconTags size={15} /> {t('categoriesTitle')}</span>
+              <span className="cl-list-row-meta">{t('settingsCategoriesHint')}</span>
+            </span>
+            <IconChevronRight size={14} className="cl-settings-row-arrow" />
+          </button>
+          <button type="button" className="cl-list-row cl-settings-row" onClick={() => void i18n.changeLanguage(i18n.language === 'en' ? 'zh' : 'en')}>
+            <span className="cl-list-row-main">
+              <span className="cl-list-row-title cl-settings-row-title"><IconLanguage size={15} /> {t('settingsQuickLanguageToggle')}</span>
+              <span className="cl-list-row-meta">{t('settingsQuickLanguageHint')}</span>
+            </span>
+            <IconChevronRight size={14} className="cl-settings-row-arrow" />
+          </button>
+        </div>
+
+        <div className="cl-card cl-form-grid">
+          <p className="cl-card-title">{t('accountActionsTitle')}</p>
+          <Button color="red" leftSection={<IconLogout size={16} />} onClick={onSignOut}>
+            {t('signOut')}
           </Button>
-        </Card>
-        <Card shadow="sm" radius="md" className="surface-card form-grid">
-          <Text fw={600}>{t('accountActionsTitle')}</Text>
-          <Button onClick={onSignOut}>{t('signOut')}</Button>
-        </Card>
+        </div>
       </div>
     </section>
   )

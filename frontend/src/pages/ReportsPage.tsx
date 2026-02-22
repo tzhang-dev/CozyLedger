@@ -1,10 +1,19 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useViewportSize } from '@mantine/hooks'
-import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, Tooltip, XAxis, YAxis } from 'recharts'
-import { Card, Group, NumberInput, Select, Stack, Text, Title } from '@mantine/core'
+import {
+  Bar,
+  BarChart,
+  Cell,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis
+} from 'recharts'
+import { IconChevronLeft, IconChevronRight } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
-import { getCategoryDistribution, getMonthlySummary } from '../lib/cozyApi'
+import { getCategoryDistribution, getMonthlySummary, listBooks } from '../lib/cozyApi'
 import { CategoryType } from '../lib/types'
 
 type Props = {
@@ -12,31 +21,20 @@ type Props = {
   bookId: string
 }
 
-const categoryColors = ['#D16F2F', '#65A38D', '#50709A', '#CC8B65', '#7B6EA3', '#5A8B4B']
-const darkChartLabel = '#9aa3b7'
-const darkChartGrid = 'rgba(255,255,255,0.12)'
-const tooltipStyle = {
-  backgroundColor: '#161d2d',
-  border: '1px solid rgba(255,255,255,0.12)',
-  borderRadius: '12px',
-  color: '#f2f5fe'
-}
+const categoryColors = ['#6d46f1', '#2dd4bf', '#f97316', '#ef4444', '#06b6d4', '#eab308']
 
 /**
  * Renders chart-based monthly summary and category distribution for the active book.
  */
 export function ReportsPage({ token, bookId }: Props) {
-  const { t } = useTranslation()
-  const { width: viewportWidth } = useViewportSize()
+  const { t, i18n } = useTranslation()
   const now = new Date()
-  const [year, setYear] = useState(now.getUTCFullYear())
-  const [month, setMonth] = useState(now.getUTCMonth() + 1)
+  const [cursor, setCursor] = useState(new Date(now.getUTCFullYear(), now.getUTCMonth(), 1))
   const [distributionType, setDistributionType] = useState(String(CategoryType.Expense))
+  const [activeTab, setActiveTab] = useState<'overview' | 'categories'>('overview')
 
-  const typeOptions = [
-    { label: t('typeExpense'), value: String(CategoryType.Expense) },
-    { label: t('typeIncome'), value: String(CategoryType.Income) }
-  ]
+  const year = cursor.getUTCFullYear()
+  const month = cursor.getUTCMonth() + 1
 
   const summaryQuery = useQuery({
     queryKey: ['reports-summary', bookId, year, month],
@@ -47,140 +45,154 @@ export function ReportsPage({ token, bookId }: Props) {
     queryKey: ['reports-distribution', bookId, year, month, distributionType],
     queryFn: () => getCategoryDistribution(token, bookId, year, month, Number(distributionType) as CategoryType)
   })
+  const booksQuery = useQuery({
+    queryKey: ['books', token],
+    queryFn: () => listBooks(token)
+  })
 
-  const summaryChartData = useMemo(() => {
+  const summaryData = useMemo(() => {
     if (!summaryQuery.data) {
       return []
     }
 
     return [
-      { name: t('summaryIncome'), value: summaryQuery.data.incomeTotal },
-      { name: t('summaryExpense'), value: summaryQuery.data.expenseTotal },
-      { name: t('summaryNet'), value: summaryQuery.data.netTotal }
+      { label: t('summaryIncome'), value: summaryQuery.data.incomeTotal, color: '#22c55e' },
+      { label: t('summaryExpense'), value: summaryQuery.data.expenseTotal, color: '#ef4444' },
+      { label: t('reportsSaved'), value: summaryQuery.data.netTotal, color: '#6d46f1' }
     ]
   }, [summaryQuery.data, t])
 
-  const categoryChartData = useMemo(() => {
-    const items = distributionQuery.data?.items ?? []
-    return items.map((item) => ({
-      name: item.categoryNameEn,
-      value: item.totalBaseAmount
-    }))
-  }, [distributionQuery.data])
+  const categoryData = useMemo(
+    () =>
+      (distributionQuery.data?.items ?? []).map((item, index) => ({
+        name: i18n.language === 'zh' ? item.categoryNameZhHans : item.categoryNameEn,
+        value: item.totalBaseAmount,
+        color: categoryColors[index % categoryColors.length]
+      })),
+    [distributionQuery.data, i18n.language]
+  )
 
-  const baseCurrency = summaryQuery.data?.baseCurrency ?? distributionQuery.data?.baseCurrency ?? 'N/A'
-  const formatCurrencyValue = (value: number | string | undefined) => {
-    const numericValue = Number(value ?? 0)
-    return `${baseCurrency} ${numericValue.toFixed(2)}`
-  }
-
-  const summaryChartWidth = Math.max(320, Math.min(980, Math.floor(viewportWidth - 120)))
-  const splitChartWidth =
-    viewportWidth > 860
-      ? Math.max(280, Math.floor((viewportWidth - 190) / 2))
-      : Math.max(280, Math.floor(viewportWidth - 120))
-  const chartHeight = 320
-  const topDistribution = useMemo(() => categoryChartData.slice().sort((a, b) => b.value - a.value).slice(0, 5), [categoryChartData])
-  const maxDistribution = Math.max(...topDistribution.map((item) => item.value), 1)
+  const bookBaseCurrency = booksQuery.data?.find((book) => book.id === bookId)?.baseCurrency.toUpperCase()
+  const baseCurrency = summaryQuery.data?.baseCurrency ?? distributionQuery.data?.baseCurrency ?? bookBaseCurrency ?? ''
+  const monthLabel = cursor.toLocaleDateString(i18n.language === 'zh' ? 'zh-CN' : 'en-US', { month: 'long', year: 'numeric' })
+  const maxCategoryValue = Math.max(...categoryData.map((item) => item.value), 1)
 
   return (
-    <section className="page-panel">
-      <div className="page-titlebar">
-        <div>
-          <Title order={2}>{t('reportsTitle')}</Title>
-          <p>
-            {year}-{String(month).padStart(2, '0')}
-          </p>
-        </div>
-      </div>
-      <Group>
-        <NumberInput label={t('yearLabel')} value={year} onChange={(value) => setYear(Number(value || now.getUTCFullYear()))} />
-        <NumberInput label={t('monthLabel')} value={month} min={1} max={12} onChange={(value) => setMonth(Number(value || 1))} />
-        <Select
-          label={t('categoryViewLabel')}
-          data={typeOptions}
-          value={distributionType}
-          onChange={(value) => setDistributionType(value ?? String(CategoryType.Expense))}
-        />
-      </Group>
-
-      <Card shadow="sm" radius="md" className="surface-card hero-card">
-        <Text fw={600}>{t('summaryTitle')} ({baseCurrency})</Text>
-        <Text c="dimmed" size="sm">
-          {t('summaryCurrencyHint')}
-        </Text>
-        <div className="chart-box">
-          <BarChart width={summaryChartWidth} height={chartHeight} data={summaryChartData}>
-            <CartesianGrid strokeDasharray="2 6" stroke={darkChartGrid} />
-            <XAxis dataKey="name" tick={{ fill: darkChartLabel, fontSize: 12 }} axisLine={{ stroke: darkChartGrid }} tickLine={false} />
-            <YAxis tick={{ fill: darkChartLabel, fontSize: 12 }} axisLine={{ stroke: darkChartGrid }} tickLine={false} />
-            <Tooltip formatter={formatCurrencyValue} contentStyle={tooltipStyle} />
-            <Bar dataKey="value" name={`${t('amountWithCurrency')} (${baseCurrency})`}>
-              {summaryChartData.map((entry, index) => (
-                <Cell key={`${entry.name}-${index}`} fill={categoryColors[index % categoryColors.length]} />
-              ))}
-            </Bar>
-          </BarChart>
-        </div>
-      </Card>
-
-      <Card shadow="sm" radius="md" className="surface-card">
-        <Text fw={600}>{t('categoryDistributionTitle')} ({baseCurrency})</Text>
-        <Text c="dimmed" size="sm">
-          {t('categoryDistributionHint')}
-        </Text>
-        <div className="split-grid report-charts">
-          <div className="chart-box">
-            <PieChart width={splitChartWidth} height={chartHeight}>
-              <Pie
-                dataKey="value"
-                data={categoryChartData}
-                nameKey="name"
-                outerRadius={Math.max(80, Math.min(splitChartWidth, chartHeight) * 0.3)}
-                label
-                labelLine={false}
-              >
-                {categoryChartData.map((entry, index) => (
-                  <Cell key={`${entry.name}-${index}`} fill={categoryColors[index % categoryColors.length]} />
-                ))}
-              </Pie>
-              <Tooltip formatter={formatCurrencyValue} contentStyle={tooltipStyle} />
-            </PieChart>
+    <section className="cl-page">
+      <header className="cl-header">
+        <div className="cl-header-inner">
+          <h1 className="cl-header-title">{t('reportsTitle')}</h1>
+          <div className="cl-month-nav">
+            <button type="button" className="cl-month-button" onClick={() => setCursor(new Date(year, month - 2, 1))}>
+              <IconChevronLeft size={18} />
+            </button>
+            <span className="cl-month-label">{monthLabel}</span>
+            <button type="button" className="cl-month-button" onClick={() => setCursor(new Date(year, month, 1))}>
+              <IconChevronRight size={18} />
+            </button>
           </div>
-
-          <div className="chart-box">
-            <BarChart width={splitChartWidth} height={chartHeight} data={categoryChartData} layout="vertical" margin={{ left: 16, right: 16 }}>
-              <CartesianGrid strokeDasharray="2 6" stroke={darkChartGrid} />
-              <XAxis type="number" tick={{ fill: darkChartLabel, fontSize: 12 }} axisLine={{ stroke: darkChartGrid }} tickLine={false} />
-              <YAxis dataKey="name" type="category" width={120} tick={{ fill: darkChartLabel, fontSize: 12 }} axisLine={{ stroke: darkChartGrid }} tickLine={false} />
-              <Tooltip formatter={formatCurrencyValue} contentStyle={tooltipStyle} />
-              <Bar dataKey="value" name={`${t('amountWithCurrency')} (${baseCurrency})`} fill="#2fc4db" />
-            </BarChart>
-          </div>
-        </div>
-        {!!topDistribution.length && (
-          <div className="rows-stack">
-            {topDistribution.map((item) => (
-              <div key={item.name} className="list-row">
-                <div className="list-row-main">
-                  <span className="list-row-title">{item.name}</span>
-                  <span className="list-row-meta">{((item.value / maxDistribution) * 100).toFixed(1)}%</span>
-                  <div className="bar-track">
-                    <div className="bar-fill" style={{ width: `${(item.value / maxDistribution) * 100}%` }} />
-                  </div>
-                </div>
-                <span className="amount-positive">{baseCurrency} {item.value.toFixed(2)}</span>
+          <div className="cl-stat-grid-3">
+            {summaryData.map((item) => (
+              <div key={item.label} className="cl-stat-box cl-stat-box-net">
+                <span className="cl-stat-label">{item.label}</span>
+                <span className="cl-stat-value" style={{ color: item.color }}>
+                  {baseCurrency} {item.value.toFixed(2)}
+                </span>
               </div>
             ))}
           </div>
-        )}
+        </div>
+      </header>
 
-        {!categoryChartData.length && (
-          <Stack gap="xs" mt="sm">
-            <Text c="dimmed">{t('noCategoryData')}</Text>
-          </Stack>
-        )}
-      </Card>
+      <div className="cl-body">
+        <div className="cl-filter-row">
+          <button type="button" className={`cl-chip ${activeTab === 'overview' ? 'cl-chip-active' : ''}`} onClick={() => setActiveTab('overview')}>
+            {t('reportsTabOverview')}
+          </button>
+          <button type="button" className={`cl-chip ${activeTab === 'categories' ? 'cl-chip-active' : ''}`} onClick={() => setActiveTab('categories')}>
+            {t('reportsTabCategories')}
+          </button>
+          <button
+            type="button"
+            className={`cl-chip ${distributionType === String(CategoryType.Expense) ? 'cl-chip-active' : ''}`}
+            onClick={() => setDistributionType(String(CategoryType.Expense))}
+          >
+            {t('typeExpense')}
+          </button>
+          <button
+            type="button"
+            className={`cl-chip ${distributionType === String(CategoryType.Income) ? 'cl-chip-active' : ''}`}
+            onClick={() => setDistributionType(String(CategoryType.Income))}
+          >
+            {t('typeIncome')}
+          </button>
+        </div>
+
+        {activeTab === 'overview' ? (
+          <div className="cl-card">
+            <p className="cl-card-title">{t('reportsIncomeVsExpense')}</p>
+            <p className="cl-card-subtitle">{t('reportsMonthlyTotalsIn', { currency: baseCurrency })}</p>
+            <div style={{ width: '100%', height: 280 }}>
+              <ResponsiveContainer>
+                <BarChart data={summaryData}>
+                  <XAxis dataKey="label" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
+                  <Tooltip formatter={(value) => `${baseCurrency} ${Number(value ?? 0).toFixed(2)}`} />
+                  <Bar dataKey="value" radius={[8, 8, 0, 0]}>
+                    {summaryData.map((item, index) => (
+                      <Cell key={`${item.label}-${index}`} fill={item.color} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        ) : null}
+
+        {activeTab === 'categories' ? (
+          <>
+            <div className="cl-card">
+              <p className="cl-card-title">{t('categoryDistributionTitle')}</p>
+              <div style={{ width: '100%', height: 260 }}>
+                <ResponsiveContainer>
+                  <PieChart>
+                    <Pie data={categoryData} dataKey="value" nameKey="name" innerRadius={48} outerRadius={88}>
+                      {categoryData.map((item, index) => (
+                        <Cell key={`${item.name}-${index}`} fill={item.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => `${baseCurrency} ${Number(value ?? 0).toFixed(2)}`} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="cl-card">
+              <p className="cl-card-title">{t('reportsBreakdownTitle')}</p>
+              <div className="cl-list" style={{ marginTop: 10 }}>
+                {categoryData.map((item) => {
+                  const width = (item.value / maxCategoryValue) * 100
+                  return (
+                    <div key={item.name} className="cl-list-row">
+                      <div className="cl-list-row-main">
+                        <span className="cl-list-row-title">{item.name}</span>
+                        <span className="cl-list-row-meta">{width.toFixed(1)}%</span>
+                        <div className="cl-progress-track">
+                          <div className="cl-progress-fill" style={{ width: `${width}%`, background: item.color }} />
+                        </div>
+                      </div>
+                      <span className="cl-stat-value">
+                        {baseCurrency} {item.value.toFixed(2)}
+                      </span>
+                    </div>
+                  )
+                })}
+                {!categoryData.length ? <p className="cl-empty">{t('noCategoryData')}</p> : null}
+              </div>
+            </div>
+          </>
+        ) : null}
+      </div>
     </section>
   )
 }

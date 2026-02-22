@@ -3,6 +3,13 @@ import type { FormEvent } from 'react'
 import { NavLink, Navigate, Route, Routes, useNavigate } from 'react-router-dom'
 import { useMutation } from '@tanstack/react-query'
 import { Alert, Button, Card, Group, PasswordInput, Text, TextInput } from '@mantine/core'
+import {
+  IconChartBar,
+  IconHome,
+  IconList,
+  IconPlus,
+  IconSettings
+} from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 import { ApiError, createBook, isNetworkError, listBooks, login, register } from './lib/cozyApi'
 import { clearSession, loadSession, saveSession } from './lib/session'
@@ -19,31 +26,32 @@ import './App.css'
 type NavItem = {
   to: string
   label: string
-  className?: string
+  icon: (typeof IconHome)
   end?: boolean
+  center?: boolean
 }
 
 function Navigation({ items }: { items: NavItem[] }) {
   return (
-    <nav className="bottom-nav">
-      {items.map((item) => (
-        <NavLink
-          key={`${item.to}-${item.label}`}
-          to={item.to}
-          end={item.end}
-          className={({ isActive }) =>
-            [
-              'bottom-nav-link',
-              item.className ?? '',
-              isActive ? 'bottom-nav-link-active' : ''
-            ]
-              .filter(Boolean)
-              .join(' ')
-          }
-        >
-          {item.label}
-        </NavLink>
-      ))}
+    <nav className="cl-bottom-nav" aria-label="Primary">
+      {items.map((item) => {
+        const Icon = item.icon
+        return (
+          <NavLink
+            key={`${item.to}-${item.label}`}
+            to={item.to}
+            end={item.end}
+            className={({ isActive }) => [
+              'cl-bottom-nav-item',
+              item.center ? 'cl-bottom-nav-item-center' : '',
+              isActive ? 'cl-bottom-nav-item-active' : ''
+            ].join(' ')}
+          >
+            <Icon size={item.center ? 24 : 19} stroke={1.8} />
+            {!item.center ? <span>{item.label}</span> : null}
+          </NavLink>
+        )
+      })}
     </nav>
   )
 }
@@ -77,7 +85,7 @@ function SetupPanel({ onReady }: { onReady: (session: SessionState) => void }) {
       saveSession(session)
       onReady(session)
     } catch {
-      // Keep setup screen usable even when book lookup fails.
+      // Setup panel remains usable if the auto-enter attempt fails.
     }
   }
 
@@ -127,15 +135,14 @@ function SetupPanel({ onReady }: { onReady: (session: SessionState) => void }) {
   }
 
   return (
-    <main className="setup-main">
-      <Card shadow="sm" radius="md" className="setup-card">
-        <Text fw={700} size="lg">
-          {t('setupTitle')}
-        </Text>
-        <Text c="dimmed" size="sm">
-          {t('setupHint')}
-        </Text>
-        <form onSubmit={handleRegister} className="form-grid">
+    <main className="cl-setup-shell">
+      <div className="cl-setup-deco cl-setup-deco-right" />
+      <div className="cl-setup-deco cl-setup-deco-left" />
+      <Card shadow="sm" radius="lg" className="cl-setup-card">
+        <Text className="cl-setup-title">{t('setupTitle')}</Text>
+        <Text className="cl-setup-subtitle">{t('setupHint')}</Text>
+
+        <form onSubmit={handleRegister} className="cl-form-grid">
           <TextInput
             label={t('emailLabel')}
             value={email}
@@ -164,7 +171,8 @@ function SetupPanel({ onReady }: { onReady: (session: SessionState) => void }) {
           </Group>
           {loginError ? <Alert color="red">{loginError}</Alert> : null}
         </form>
-        <form onSubmit={handleCreateBook} className="form-grid">
+
+        <form onSubmit={handleCreateBook} className="cl-form-grid">
           <TextInput label={t('bookNameLabel')} value={bookName} onChange={(event) => setBookName(event.currentTarget.value)} required />
           <TextInput
             label={t('baseCurrencyLabel')}
@@ -193,11 +201,11 @@ function App() {
 
   const navItems: NavItem[] = useMemo(
     () => [
-      { to: '/ledger', label: t('navTransactions'), end: true },
-      { to: '/reports', label: t('navReports') },
-      { to: '/ledger/new', label: t('navNewTransaction'), className: 'bottom-nav-link-center' },
-      { to: '/accounts', label: t('navAccounts') },
-      { to: '/settings', label: t('navSettings') }
+      { to: '/dashboard', label: t('navDashboard'), icon: IconHome },
+      { to: '/ledger', label: t('navTransactions'), icon: IconList },
+      { to: '/ledger/new', label: t('navNewTransaction'), icon: IconPlus, center: true },
+      { to: '/reports', label: t('navReports'), icon: IconChartBar },
+      { to: '/settings', label: t('navSettings'), icon: IconSettings }
     ],
     [t]
   )
@@ -207,35 +215,37 @@ function App() {
   }
 
   return (
-    <div className="app-shell">
-      <main className="app-main">
-        <Routes>
-          <Route path="/dashboard" element={<DashboardPage token={session.token} bookId={session.bookId} />} />
-          <Route path="/ledger" element={<LedgerPage token={session.token} bookId={session.bookId} mode="list" />} />
-          <Route path="/ledger/new" element={<LedgerPage token={session.token} bookId={session.bookId} mode="new" />} />
-          <Route path="/reports" element={<ReportsPage token={session.token} bookId={session.bookId} />} />
-          <Route path="/accounts" element={<AccountsPage token={session.token} bookId={session.bookId} />} />
-          <Route
-            path="/members"
-            element={<MembersPage token={session.token} bookId={session.bookId} onBookJoined={(bookId) => setSession({ ...session, bookId })} />}
-          />
-          <Route
-            path="/settings"
-            element={
-              <SettingsPage
-                onSignOut={() => {
-                  clearSession()
-                  setSession(null)
-                }}
-              />
-            }
-          />
-          <Route path="/settings/categories" element={<CategoriesSettingsPage token={session.token} bookId={session.bookId} onBack={() => navigate('/settings')} />} />
-          <Route path="*" element={<Navigate to="/ledger" replace />} />
-        </Routes>
-      </main>
+    <div className="cl-mobile-shell-bg">
+      <div className="cl-mobile-shell">
+        <main className="cl-mobile-main">
+          <Routes>
+            <Route path="/dashboard" element={<DashboardPage token={session.token} bookId={session.bookId} />} />
+            <Route path="/ledger" element={<LedgerPage token={session.token} bookId={session.bookId} mode="list" />} />
+            <Route path="/ledger/new" element={<LedgerPage token={session.token} bookId={session.bookId} mode="new" />} />
+            <Route path="/reports" element={<ReportsPage token={session.token} bookId={session.bookId} />} />
+            <Route path="/accounts" element={<AccountsPage token={session.token} bookId={session.bookId} />} />
+            <Route
+              path="/members"
+              element={<MembersPage token={session.token} bookId={session.bookId} onBookJoined={(bookId) => setSession({ ...session, bookId })} />}
+            />
+            <Route
+              path="/settings"
+              element={
+                <SettingsPage
+                  onSignOut={() => {
+                    clearSession()
+                    setSession(null)
+                  }}
+                />
+              }
+            />
+            <Route path="/settings/categories" element={<CategoriesSettingsPage token={session.token} bookId={session.bookId} onBack={() => navigate('/settings')} />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </main>
 
-      <Navigation items={navItems} />
+        <Navigation items={navItems} />
+      </div>
     </div>
   )
 }

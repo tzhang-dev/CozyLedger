@@ -1,7 +1,7 @@
 import { useCallback, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ActionIcon, Alert, Button, Card, Group, Menu, Select, Stack, Text, TextInput, Title } from '@mantine/core'
+import { ActionIcon, Alert, Button, Group, Menu, Select, Text, TextInput } from '@mantine/core'
 import { IconDots } from '@tabler/icons-react'
 import { useTranslation } from 'react-i18next'
 import { ActionFormModal } from '../components/ActionFormModal'
@@ -13,7 +13,7 @@ import {
   listAccounts,
   listBooks,
   listTransactions,
-  updateAccount,
+  updateAccount
 } from '../lib/cozyApi'
 import { AccountType, TransactionType } from '../lib/types'
 
@@ -28,7 +28,7 @@ type AccountFormMode = 'create' | 'edit'
  * Manages account and category CRUD for the active book.
  */
 export function AccountsPage({ token, bookId }: Props) {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
   const queryClient = useQueryClient()
   const [selectedAccountId, setSelectedAccountId] = useState<string | null>(null)
   const [accountFormMode, setAccountFormMode] = useState<AccountFormMode | null>(null)
@@ -53,7 +53,7 @@ export function AccountsPage({ token, bookId }: Props) {
   })
 
   const booksQuery = useQuery({
-    queryKey: ['books'],
+    queryKey: ['books', token],
     queryFn: () => listBooks(token)
   })
 
@@ -84,6 +84,7 @@ export function AccountsPage({ token, bookId }: Props) {
 
     return balances
   }, [transactionsQuery.data])
+
   const getAccountTypeLabel = useCallback((value: AccountType) => {
     switch (value) {
       case AccountType.Cash:
@@ -96,8 +97,6 @@ export function AccountsPage({ token, bookId }: Props) {
         return t('typeInvestment')
       case AccountType.Liability:
         return t('typeLiability')
-      case AccountType.Other:
-        return t('typeOther')
       default:
         return t('typeOther')
     }
@@ -107,6 +106,7 @@ export function AccountsPage({ token, bookId }: Props) {
     const accounts = accountsQuery.data ?? []
     return accounts.find((account) => account.id === selectedAccountId) ?? accounts[0] ?? null
   }, [accountsQuery.data, selectedAccountId])
+
   const groupedAccounts = useMemo(() => {
     const accounts = accountsQuery.data ?? []
     const typeOrder: AccountType[] = [
@@ -120,7 +120,11 @@ export function AccountsPage({ token, bookId }: Props) {
 
     return typeOrder
       .map((type) => {
-        const items = accounts.filter((account) => account.type === type).sort((a, b) => a.nameEn.localeCompare(b.nameEn))
+        const items = accounts
+          .filter((account) => account.type === type)
+          .sort((a, b) =>
+            (i18n.language === 'zh' ? a.nameZhHans : a.nameEn).localeCompare(i18n.language === 'zh' ? b.nameZhHans : b.nameEn)
+          )
         return {
           type,
           label: getAccountTypeLabel(type),
@@ -128,7 +132,7 @@ export function AccountsPage({ token, bookId }: Props) {
         }
       })
       .filter((group) => group.items.length > 0)
-  }, [accountsQuery.data, getAccountTypeLabel])
+  }, [accountsQuery.data, getAccountTypeLabel, i18n.language])
 
   const upsertAccount = useMutation({
     mutationFn: async () => {
@@ -199,7 +203,7 @@ export function AccountsPage({ token, bookId }: Props) {
 
     setDeleteError(null)
     setAccountFormMode('edit')
-    setAccountName(selectedAccount.nameEn)
+    setAccountName(i18n.language === 'zh' ? selectedAccount.nameZhHans : selectedAccount.nameEn)
     setAccountCurrency(selectedAccount.currency)
     setAccountType(String(selectedAccount.type))
   }
@@ -209,7 +213,7 @@ export function AccountsPage({ token, bookId }: Props) {
       return
     }
 
-    const confirmed = window.confirm(t('deleteAccountConfirm', { name: selectedAccount.nameEn }))
+    const confirmed = window.confirm(t('deleteAccountConfirm', { name: i18n.language === 'zh' ? selectedAccount.nameZhHans : selectedAccount.nameEn }))
     if (!confirmed) {
       return
     }
@@ -220,63 +224,62 @@ export function AccountsPage({ token, bookId }: Props) {
   const selectedAccountBalance = selectedAccount ? balanceByAccount.get(selectedAccount.id) ?? 0 : 0
 
   return (
-    <section className="page-panel">
-      <div className="page-titlebar">
-        <div>
-          <Title order={2}>{t('accountsTitle')}</Title>
-          <p>{t('accountsHint')}</p>
+    <section className="cl-page">
+      <header className="cl-header">
+        <div className="cl-header-inner">
+          <h1 className="cl-header-title">{t('accountsTitle')}</h1>
+          <p className="cl-header-subtitle">{t('accountsManageSubtitle')}</p>
+          <Menu shadow="md" width={220} position="bottom-end">
+            <Menu.Target>
+              <ActionIcon variant="light" size="lg" aria-label={t('accountActionsMenu')} style={{ justifySelf: 'end' }}>
+                <IconDots size={18} />
+              </ActionIcon>
+            </Menu.Target>
+            <Menu.Dropdown>
+              <Menu.Item onClick={openCreateAccount}>{t('addAccount')}</Menu.Item>
+              <Menu.Item onClick={openEditAccount} disabled={!selectedAccount}>
+                {t('editAccount')}
+              </Menu.Item>
+              <Menu.Item color="red" onClick={requestDeleteAccount} disabled={!selectedAccount || deleteAccountMutation.isPending}>
+                {t('deleteAccount')}
+              </Menu.Item>
+            </Menu.Dropdown>
+          </Menu>
         </div>
-        <Menu shadow="md" width={220} position="bottom-end">
-          <Menu.Target>
-            <ActionIcon variant="light" className="action-menu-button" size="lg" aria-label={t('accountActionsMenu')}>
-              <IconDots size={18} />
-            </ActionIcon>
-          </Menu.Target>
-          <Menu.Dropdown>
-            <Menu.Item onClick={openCreateAccount}>{t('addAccount')}</Menu.Item>
-            <Menu.Item onClick={openEditAccount} disabled={!selectedAccount}>
-              {t('editAccount')}
-            </Menu.Item>
-            <Menu.Item color="red" onClick={requestDeleteAccount} disabled={!selectedAccount || deleteAccountMutation.isPending}>
-              {t('deleteAccount')}
-            </Menu.Item>
-          </Menu.Dropdown>
-        </Menu>
-      </div>
+      </header>
 
-      {deleteError ? <Alert color="red">{deleteError}</Alert> : null}
+      <div className="cl-body">
+        {deleteError ? <Alert color="red">{deleteError}</Alert> : null}
 
-      <div className="page-panel">
-        <Card shadow="sm" radius="md" className="surface-card">
-          <Text fw={600}>{t('accountsTitle')}</Text>
-          <Stack gap="xs" mt="md" className="rows-stack">
+        <div className="cl-card">
+          <div className="cl-list">
             {groupedAccounts.map((group) => (
-              <div key={String(group.type)} className="account-group">
-                <Text className="account-group-title">{group.label}</Text>
+              <div key={String(group.type)} className="cl-list-group">
+                <p className="cl-list-group-label">{group.label}</p>
                 {group.items.map((account) => (
                   <button
                     key={account.id}
                     type="button"
-                    className={`list-row account-row ${selectedAccount?.id === account.id ? 'account-row-selected' : ''}`}
+                    className="cl-list-row"
                     onClick={() => {
                       setSelectedAccountId(account.id)
                       setDetailsOpen(true)
                     }}
                   >
-                    <div className="list-row-main list-row-main-grow">
-                      <span className="list-row-title">{account.nameEn}</span>
-                      <span className="list-row-meta">{getAccountTypeLabel(account.type)}</span>
-                    </div>
-                    <Text className={`account-row-balance ${Number((balanceByAccount.get(account.id) ?? 0).toFixed(2)) >= 0 ? 'amount-positive' : 'amount-negative'}`}>
+                    <span className="cl-list-row-main">
+                      <span className="cl-list-row-title">{i18n.language === 'zh' ? account.nameZhHans : account.nameEn}</span>
+                      <span className="cl-list-row-meta">{getAccountTypeLabel(account.type)}</span>
+                    </span>
+                    <Text className={Number((balanceByAccount.get(account.id) ?? 0).toFixed(2)) >= 0 ? 'cl-amount-income' : 'cl-amount-expense'}>
                       {account.currency} {(balanceByAccount.get(account.id) ?? 0).toFixed(2)}
                     </Text>
                   </button>
                 ))}
               </div>
             ))}
-            {!accountsQuery.data?.length && <Text c="dimmed">{t('noAccounts')}</Text>}
-          </Stack>
-        </Card>
+            {!accountsQuery.data?.length ? <p className="cl-empty">{t('noAccounts')}</p> : null}
+          </div>
+        </div>
       </div>
 
       <ActionFormModal
@@ -284,7 +287,7 @@ export function AccountsPage({ token, bookId }: Props) {
         title={accountFormMode === 'edit' ? t('editAccount') : t('createAccount')}
         onClose={() => setAccountFormMode(null)}
       >
-        <form onSubmit={handleAccountSubmit} className="form-grid">
+        <form onSubmit={handleAccountSubmit} className="cl-form-grid">
           <TextInput value={accountName} onChange={(event) => setAccountName(event.currentTarget.value)} label={t('nameLabel')} required />
           <CurrencySelect
             label={t('currencyLabel')}
@@ -306,30 +309,34 @@ export function AccountsPage({ token, bookId }: Props) {
         </form>
       </ActionFormModal>
 
-      <EntityDetailsModal opened={detailsOpen} title={selectedAccount?.nameEn ?? t('accountDetailsTitle')} onClose={() => setDetailsOpen(false)}>
+      <EntityDetailsModal
+        opened={detailsOpen}
+        title={(selectedAccount ? (i18n.language === 'zh' ? selectedAccount.nameZhHans : selectedAccount.nameEn) : null) ?? t('accountDetailsTitle')}
+        onClose={() => setDetailsOpen(false)}
+      >
         {selectedAccount ? (
-          <div className="form-grid">
-            <div className="list-row">
-              <span className="list-row-title">{t('nameLabel')}</span>
-              <span className="list-row-meta">{selectedAccount.nameEn}</span>
+          <div className="cl-form-grid">
+            <div className="cl-list-row">
+              <span className="cl-list-row-title">{t('nameLabel')}</span>
+              <span className="cl-list-row-meta">{i18n.language === 'zh' ? selectedAccount.nameZhHans : selectedAccount.nameEn}</span>
             </div>
-            <div className="list-row">
-              <span className="list-row-title">{t('typeLabel')}</span>
-              <span className="list-row-meta">{getAccountTypeLabel(selectedAccount.type)}</span>
+            <div className="cl-list-row">
+              <span className="cl-list-row-title">{t('typeLabel')}</span>
+              <span className="cl-list-row-meta">{getAccountTypeLabel(selectedAccount.type)}</span>
             </div>
-            <div className="list-row">
-              <span className="list-row-title">{t('currencyLabel')}</span>
-              <span className="list-row-meta">{selectedAccount.currency}</span>
+            <div className="cl-list-row">
+              <span className="cl-list-row-title">{t('currencyLabel')}</span>
+              <span className="cl-list-row-meta">{selectedAccount.currency}</span>
             </div>
-            <div className="list-row">
-              <span className="list-row-title">{t('accountBalanceLabel')}</span>
-              <Text className={Number(selectedAccountBalance.toFixed(2)) >= 0 ? 'amount-positive' : 'amount-negative'}>
+            <div className="cl-list-row">
+              <span className="cl-list-row-title">{t('accountBalanceLabel')}</span>
+              <Text className={Number(selectedAccountBalance.toFixed(2)) >= 0 ? 'cl-amount-income' : 'cl-amount-expense'}>
                 {selectedAccount.currency} {selectedAccountBalance.toFixed(2)}
               </Text>
             </div>
           </div>
         ) : (
-          <Text c="dimmed">{t('accountNoSelection')}</Text>
+          <p className="cl-empty">{t('accountNoSelection')}</p>
         )}
       </EntityDetailsModal>
     </section>
