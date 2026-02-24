@@ -7,6 +7,12 @@ These rules are mandatory for any coding agent working in this repository.
 1. Always follow `doc/plan/DEV_PLAN.md` as the primary execution plan.
 2. Use all relevant supporting docs in `doc/plan/` when implementing work.
 
+## User Story Rules
+
+1. When creating a user story, fully complete `doc/features/template.md`.
+2. Store each user story file in the corresponding status folder under `doc/features/` (for example: `new`, `planned`, `finished`, etc.).
+3. Do not place user story files directly in `doc/features/` root.
+
 ## Milestone Execution
 
 1. Implement work milestone-by-milestone for the MVP.
